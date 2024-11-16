@@ -1,12 +1,11 @@
 package utils
 
 import ("fmt"
-	"reflect"
 )
 
 func Logger(obj any){
 	
-	fmt.Println("Type is :",reflect.TypeOf(obj))
+	//fmt.Println("Type is :",reflect.TypeOf(obj))
 
 	switch v := obj.(type) {
 		
@@ -19,7 +18,7 @@ func Logger(obj any){
 		break;
 
 		case string:
-			fmt.Println("v is of type : ",v);
+			fmt.Println(v);
 			break;
 			
 		default:
