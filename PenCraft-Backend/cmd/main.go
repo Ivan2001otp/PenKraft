@@ -4,6 +4,7 @@ import (
 	redisDb "PencraftB/repository"
 	"PencraftB/utils"
 	mongoDb "PencraftB/repository"
+	routers  "PencraftB/Routes"
 	"net/http"
 	"log"
 )
@@ -19,5 +20,10 @@ func main(){
 	defer client.Close();
 	defer rdb.Close();
 
+	router := routers.Router()
+
+	if err:= http.ListenAndServe(":8080", router); err != nil{
+		log.Fatal(err);
+	}
 	
 }
