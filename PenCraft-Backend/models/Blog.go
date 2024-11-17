@@ -2,12 +2,12 @@ package models
 
 import (
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Blog struct {
-	Blog_id primitive.ObjectID `json:"blog_id" bson:"blog_id"`
+	ID primitive.ObjectID `bson:"_id"`
+	Blog_id string `json:"blog_id" bson:"blog_id"`
 	Title string `json:"title" bson:"title" validate:"required,min=1"`
 	Excerpt string `json:"excerpt" bson:"excerpt" validate:"required"`
 	Tag_id string `json:"tag_id" bson:"tag_id"`

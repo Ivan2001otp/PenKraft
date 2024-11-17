@@ -1,7 +1,10 @@
 package utils
 
 import ("fmt"
+"time"
 )
+
+var TTL time.Duration = 1 * time.Hour
 
 func Logger(obj any){
 	

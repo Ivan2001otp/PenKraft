@@ -11,12 +11,14 @@ import (
 
 func ReadEnvFile() *map[string]string {
 	envFile, err := godotenv.Read(".env")
-	fmt.Println(envFile)
 	
 	if err!=nil {
+		log.Println(err)
 		utils.Logger("Error loading .env File")
 		log.Fatal("Fatal error!")
 	} 
+
+	// fmt.Println(envFile)
 
 	return &envFile;
 }	

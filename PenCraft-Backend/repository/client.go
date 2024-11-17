@@ -67,7 +67,7 @@ func (db *DBClient) connect() {
 
 func (db *DBClient) GetCollection(collectionName string ) *mongo.Collection {
 	if db.client == nil {
-		log.Fatal("MongoDB client is not initialized, to get collection NAme")
+		log.Fatal("MongoDB client is not initialized, to get collection Name")
 	}
 
 	return db.client.Database(db.config.DatabaseName).Collection(collectionName);
