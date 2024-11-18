@@ -10,7 +10,7 @@ import (
 
 
 func ReadEnvFile() *map[string]string {
-	envFile, err := godotenv.Read(".env")
+	envFile, err := godotenv.Read("../.env")
 	
 	if err!=nil {
 		log.Println(err)

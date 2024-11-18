@@ -2,6 +2,7 @@ package repository
 
 import (
 	"PencraftB/models"
+	relations "PencraftB/models/Relations"
 	"PencraftB/utils"
 	"context"
 	"log"
@@ -23,6 +24,7 @@ var (
 	once sync.Once
 )
 
+
 func NewDBClient() *DBClient {
 	once.Do(func() {
 
@@ -43,6 +45,7 @@ func NewDBClient() *DBClient {
 	return instance;
 
 }
+
 
 func (db *DBClient) connect() {
 	clientOptions := options.Client().
@@ -79,6 +82,7 @@ func (db *DBClient) GetCollection(collectionName string ) *mongo.Collection {
 }
 
 
+
 func (db *DBClient) Close() {
 	if db.client != nil {
 		err := db.client.Disconnect(context.TODO())
@@ -91,10 +95,10 @@ func (db *DBClient) Close() {
 	}
 }
 
+
 func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interface{},error){
 	
 	var ctx, cancel = context.WithTimeout(context.Background(), 100* time.Second);
-
 	defer cancel();
 
 	collection := db.GetCollection(collectionName);
@@ -185,5 +189,103 @@ func (db *DBClient) FetchAllTags()( interface{}, error){
 	
 	
 	return allTags,nil;
+}
+
+
+func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error){
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	defer cancel();
+
+	collection := db.GetCollection(collectionName)
+	resultChan := make(chan *mongo.InsertOneResult)
+	errChan := make(chan error)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		var blogToTag relations.R_Tag_Blog
+		blogToTag.Blog_id = blog.Blog_id;
+		blogToTag.Tag_id = blog.Tag_id;
+
+		// checking for blog-relation-tag persistence
+		result,err := collection.InsertOne(ctx, blogToTag)
+		if err != nil{ 
+			log.Println("Could not save blog in mongo-db (Second) !")
+			errChan <- err;
+			return;
+		}
+		
+		resultChan <- result
+	}()
+
+
+	// close channels
+	go func(){
+		wg.Wait()
+		close(resultChan)
+		close(errChan)
+	}()
+
+	select {
+		case result := <- resultChan :
+			return result,nil
+
+		case err := <- errChan:
+			return nil,err
+
+		case <- ctx.Done():
+			return nil, ctx.Err()
+	}
+
+}
+
+func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface{}, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	defer cancel();
+
+	collection := db.GetCollection(collectionName)
+
+	resultChan := make(chan *mongo.InsertOneResult)
+	errChan := make(chan error)
+
+	var wg sync.WaitGroup;
+	wg.Add(1)
+
+	// go routine
+	go func() {
+		defer wg.Done()
+
+		// checking for blog persistence
+		result, err := collection.InsertOne(ctx, blog)
+		if err != nil {
+			log.Println("Could not save blog in mongo-db (First) !")
+			errChan <- err;
+			return;
+		}
+
+		resultChan <- result
+	}()
+
+
+	// close channels
+	go func(){
+		wg.Wait()
+		close(resultChan)
+		close(errChan)
+	}()
+
+	select {
+		case result := <- resultChan :
+			return result,nil
+
+		case err := <- errChan:
+			return nil,err
+
+		case <- ctx.Done():
+			return nil, ctx.Err()
+	}
 
 }

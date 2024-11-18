@@ -1,13 +1,10 @@
 package repository
 
 import (
-	"PencraftB/models"
 	"context"
-	"encoding/json"
 	"log"
 	"sync"
 	"time"
-
 	"github.com/go-redis/redis/v8"
 )
 
@@ -78,28 +75,17 @@ func (r *RedisClient) PushToMessageQueue(ctx context.Context, queueName string, 
 }
 
 // Fetch the blogData from cache by blogkey
-func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName string,blogKey []string) (*string, error){
-	blogData, err := r.client.Get(ctx, blogKey[1]).Result()
+func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName string,blogKey string) ( *string , error){
+	blogData, err := r.client.Get(ctx, blogKey).Result()
 
 	if err != nil {
 		log.Printf("Error retreiving the blogdata from blogKey from redisQueue. %v",err)
 		return nil,err;
 	}
+	
 
-	// unmarshal blog data
-	var blog models.Blog
-	err = json.Unmarshal([]byte(blogData),&blog)
-
-	if err!=nil {
-		log.Printf("Error on unmarshalling data from blogKey. %v", err)
-		return nil, err;
-	}
-
-	// save the data to mongoDB
-
-	r.client.Del(ctx, blogKey[1])
-	log.Printf("Blog %s successfully written to mongoDB", blog.Blog_id)
-	return &blog.Blog_id, nil;
+	r.client.Del(ctx, blogKey)
+	return &blogData, nil;
 }
 
 func (r *RedisClient) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error{

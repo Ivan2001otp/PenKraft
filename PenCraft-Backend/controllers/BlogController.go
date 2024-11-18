@@ -18,10 +18,6 @@ import (
 
 type status map[string]interface{}
 
-type operation struct {
-	operationType string      `json:"operation"`
-	data          models.Blog `json:"data"`
-}
 
 func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 
@@ -131,11 +127,11 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//check validation on fields.
-	validationErr := validateController.Struct(blogModel)
+	validationErr := validateController.Struct(&blogModel)
 	if validationErr != nil {
 		w.Write([]byte("Validation on request fields failed"))
 		http.Error(w, "Require fields missing or mistyped !", http.StatusBadRequest)
-		log.Fatalf("Error while validating request body %v", err)
+		log.Fatalf("Error while validating request body %v", validationErr.Error())
 	}
 
 	blogModel.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -146,17 +142,26 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	var redisClient repository.RedisClient = *repository.GetRedisInstance()
 
-	op := operation{
-		operationType: "create",
-		data:          blogModel,
+	op := models.Operation{
+		Operation_type: utils.CREATE_OPS,
+		Data:          blogModel,
 	}
 
 	// save data in redis..
-	redisKey := fmt.Sprintf("blog:%s", blogModel.Blog_id)
-	err = redisClient.Set(context.Background(), redisKey, op, utils.TTL)
+	redisKey := fmt.Sprintf(blogModel.Blog_id)
+
+	// convert the "op" to the slice of bytes . Redis only accepts string or bytes
+	bytes, err := json.Marshal(op)
+	if err != nil {
+		log.Println(err.Error());
+		log.Println("Failed to convert blog model to slice of bytes in Blog controller.")
+		return;
+	}
+
+	err = redisClient.Set(context.Background(), redisKey, bytes, utils.TTL)
 
 	if err != nil {
-		log.Println("Could not store data in redis in blogController")
+		log.Printf("Could not store data in redis in blogController %v", err)
 		w.Write([]byte("Failed to save in redis cache"))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
