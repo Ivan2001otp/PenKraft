@@ -1,9 +1,14 @@
 package repository
 
 import (
+	"PencraftB/models"
+	"PencraftB/utils"
 	"context"
 	"log"
 	"sync"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -84,4 +89,101 @@ func (db *DBClient) Close() {
 			log.Println("MongoDB connection closed")
 		}
 	}
+}
+
+func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interface{},error){
+	
+	var ctx, cancel = context.WithTimeout(context.Background(), 100* time.Second);
+
+	defer cancel();
+
+	collection := db.GetCollection(collectionName);
+	resultChan := make( chan *mongo.InsertOneResult)
+	errChan := make(chan error)
+
+	var wg sync.WaitGroup;
+	wg.Add(1)
+
+	// goroutine
+	go func ()  {
+		defer wg.Done();
+
+		result,err := collection.InsertOne(ctx, tag)
+		if err != nil{
+			log.Println("Could not save Tag in db !")
+			errChan <- err;
+			return;
+		}
+
+		resultChan <- result;
+	}()
+
+
+	// handling closing of channels
+	go func() {
+		wg.Wait()
+		close(resultChan)
+		close(errChan)
+	}()
+
+	select {
+	case result := <- resultChan:
+		return result,nil;
+	case err := <-errChan:
+		return nil, err;
+	case <- ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+
+func (db *DBClient) FetchAllTags()( interface{}, error){
+	var ctx, cancel = context.WithTimeout(context.Background(), 100 * time.Second)
+
+	defer cancel();
+
+	matchStage := bson.D{{Key: "$match",Value: bson.D{}}}
+
+	groupStage := bson.D{{
+		Key:"$group",
+		Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key:"total_count", Value: bson.D{{Key: "$sum",Value: 1}}},
+				{Key:"data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
+			},
+	}}
+
+	projectStage := bson.D{
+		{
+			Key:"$project",
+			Value:bson.D{
+				{"_id",0},
+				{"total_count",1},
+				{"data",1},
+			},
+		},
+	}
+
+	collection := db.GetCollection(utils.ALL_TAG);
+	result,err := collection.Aggregate(ctx, mongo.Pipeline{
+		matchStage, groupStage, projectStage,
+	})
+
+	if err!= nil{
+		log.Println("Cannot fetch all tags")
+		log.Println(err.Error())
+		return nil,err;
+	}
+
+
+	var allTags []bson.M
+	if err = result.All(ctx, &allTags); err != nil {
+		log.Println(err.Error())
+		log.Println("Failed while converting tags to bson.M[]");
+		return nil,err;
+	}
+	
+	
+	return allTags,nil;
+
 }
