@@ -8,6 +8,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type MongoDBConfig struct {
+	URI string
+	DatabaseName string
+	ConnectionTimeout time.Duration
+	PoolSize uint64
+}
+
 
 func ReadEnvFile() *map[string]string {
 	envFile, err := godotenv.Read("../.env")
@@ -22,13 +29,6 @@ func ReadEnvFile() *map[string]string {
 
 	return &envFile;
 }	
-
-type MongoDBConfig struct {
-	URI string
-	DatabaseName string
-	ConnectionTimeout time.Duration
-	PoolSize uint64
-}
 
 
 func NewMongoDBConfig() (*MongoDBConfig, error) {

@@ -13,7 +13,6 @@ var (
 	redisOnce 			sync.Once
 )
 
-
 type RedisClient struct {
 	client *redis.Client
 }

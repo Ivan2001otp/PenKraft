@@ -77,7 +77,6 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 	tag.ID = primitive.NewObjectID()
 	tag.Tag_id = tag.ID.Hex()
-
 	tag.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	tag.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
@@ -104,7 +103,6 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to encode the success response in TagController")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
 }
 
 func CreateBlogController(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +178,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		ID:      blogModel.Blog_id,
 		Message: fmt.Sprintf("New blog %s created", blogModel.Title),
 	}
+	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
