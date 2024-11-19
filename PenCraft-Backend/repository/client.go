@@ -150,29 +150,29 @@ func (db *DBClient) FetchAllTags()( interface{}, error){
 
 	matchStage := bson.D{{Key: "$match",Value: bson.D{}}}
 
-	groupStage := bson.D{{
-		Key:"$group",
-		Value: bson.D{
-				{Key: "_id", Value: nil},
-				{Key:"total_count", Value: bson.D{{Key: "$sum",Value: 1}}},
-				{Key:"data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
-			},
-	}}
+	// groupStage := bson.D{{
+	// 	Key:"$group",
+	// 	Value: bson.D{
+	// 			{Key: "_id", Value: nil},
+	// 			{Key:"total_count", Value: bson.D{{Key: "$sum",Value: 1}}},
+	// 			{Key:"data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
+	// 		},
+	// }}
 
-	projectStage := bson.D{
-		{
-			Key:"$project",
-			Value:bson.D{
-				{"_id",0},
-				{"total_count",1},
-				{"data",1},
-			},
-		},
-	}
+	// projectStage := bson.D{
+	// 	{
+	// 		Key:"$project",
+	// 		Value:bson.D{
+	// 			{"_id",0},
+	// 			{"total_count",1},
+	// 			{"data",1},
+	// 		},
+	// 	},
+	// }
 
 	collection := db.GetCollection(utils.ALL_TAG);
 	result,err := collection.Aggregate(ctx, mongo.Pipeline{
-		matchStage, groupStage, projectStage,
+		matchStage,
 	})
 
 	if err!= nil{
@@ -241,7 +241,6 @@ func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blo
 		case <- ctx.Done():
 			return nil, ctx.Err()
 	}
-
 }
 
 func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface{}, error) {
