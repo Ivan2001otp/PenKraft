@@ -1,32 +1,30 @@
 package utils
 
-import ("fmt"
-"time"
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
 )
 
-var TTL time.Duration = 1 * time.Hour
 
-func Logger(obj any){
-	
-	//fmt.Println("Type is :",reflect.TypeOf(obj))
+var TTL time.Duration = 60 * time.Minute;
 
-	switch v := obj.(type) {
-		
-	case int:
-			fmt.Println("v is of type : ",v);
-		break;
+type status map[string]interface{}
 
-	case float64:
-		fmt.Println("v is of type : ",v);
-		break;
+func GetErrorResponse(w http.ResponseWriter,statusCode int, message string) {
+	w.Header().Set("Content-Type","application/json")
+	w.WriteHeader(statusCode)
 
-		case string:
-			fmt.Println(v);
-			break;
-			
-		default:
-			fmt.Println("v is of default type : ",v);
-
+	response := status{
+		"statusCode":statusCode,
+		"message":message,
 	}
-	fmt.Println(obj)
+
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil{
+		log.Println("unable to create error response in utility.")
+		http.Error(w, "Unable to parse response",http.StatusInternalServerError)
+	}
+
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -287,5 +288,54 @@ func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface
 		case <- ctx.Done():
 			return nil, ctx.Err()
 	}
+}
 
+func (db *DBClient) FetchAllBlogs() (primitive.M, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+
+	defer cancel()
+
+	matchStage := bson.D{{Key: "$match",Value: bson.D{}}}
+
+	groupStage := bson.D{{
+		Key: "$group",
+		Value: bson.D{
+			{Key:"_id", Value:nil},
+			{Key:"total_count",Value:bson.D{{Key: "$sum",Value: 1}}},
+			{Key: "data", Value: bson.D{{Key: "$push",Value: "$$ROOT"}}},
+		},
+	}}
+
+
+	projectStage := bson.D{
+		{
+			Key: "$project",
+			Value: bson.D{
+				{"_id",0},
+				{"total_count",1},
+				{"data",1},
+			},
+		},
+	}
+
+	collection := db.GetCollection(utils.BLOG_COLLECTION);
+	result, err := collection.Aggregate(ctx, mongo.Pipeline{
+		matchStage, groupStage, projectStage,
+	})
+
+	if err != nil {
+		log.Println("Cannot fetch all blogs at client.go !")
+		log.Println(err.Error())
+		return nil, err;
+	}
+
+	var listOfBlog []bson.M
+
+	if err = result.All(ctx, &listOfBlog); err != nil {
+		log.Println(err.Error())
+		log.Println("Failed while converting tags to bson.M[]")
+		return nil, err;
+	}
+
+	return listOfBlog[0], nil;
 }

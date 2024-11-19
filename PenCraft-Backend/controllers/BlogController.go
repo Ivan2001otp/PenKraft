@@ -18,31 +18,30 @@ import (
 
 type status map[string]interface{}
 
-
+// fetches all the available tags for the blogs
 func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
-		http.Error(w ,"Invalid request type. Supposed to be GET request", http.StatusBadRequest)
-		return;
+		http.Error(w, "Invalid request type. Supposed to be GET request", http.StatusBadRequest)
+		return
 	}
-
 
 	mongoDb := repository.NewDBClient()
-	bsonArray, err := mongoDb.FetchAllTags();
+	bsonArray, err := mongoDb.FetchAllTags()
 
-	if err != nil{
+	if err != nil {
 		log.Println("Error while fetching from DB !")
-		http.Error(w, err.Error(), http.StatusInternalServerError);
-		return;
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type","application/json");
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	
-	json.NewEncoder(w).Encode(bsonArray)
 
+	json.NewEncoder(w).Encode(bsonArray)
 }
 
+// creates tags
 func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -70,9 +69,9 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if (tag.Tag_name == ""){
-		http.Error(w, "Required field tagname not given !", http.StatusInternalServerError);
-		return;
+	if tag.Tag_name == "" {
+		http.Error(w, "Required field tagname not given !", http.StatusInternalServerError)
+		return
 	}
 
 	tag.ID = primitive.NewObjectID()
@@ -105,6 +104,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// creates blog
 func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -142,7 +142,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	op := models.Operation{
 		Operation_type: utils.CREATE_OPS,
-		Data:          blogModel,
+		Data:           blogModel,
 	}
 
 	// save data in redis..
@@ -151,9 +151,9 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	// convert the "op" to the slice of bytes . Redis only accepts string or bytes
 	bytes, err := json.Marshal(op)
 	if err != nil {
-		log.Println(err.Error());
+		log.Println(err.Error())
 		log.Println("Failed to convert blog model to slice of bytes in Blog controller.")
-		return;
+		return
 	}
 
 	err = redisClient.Set(context.Background(), redisKey, bytes, utils.TTL)
@@ -178,7 +178,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		ID:      blogModel.Blog_id,
 		Message: fmt.Sprintf("New blog %s created", blogModel.Title),
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
@@ -186,4 +186,27 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Could not encode success Response for createBlog controller")
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 	}
+}
+
+// fetch all blogs(GET)
+func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		w.Write([]byte("Invalid request. Supposed to be GET request ."))
+		http.Error(w, "Make GET request !", http.StatusBadRequest)
+		return
+	}
+
+	mongoDb := repository.NewDBClient()
+	bsonArray, err := mongoDb.FetchAllBlogs()
+
+	if err != nil {
+		utils.GetErrorResponse(w, http.StatusInternalServerError, "Could not save records in DB")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(bsonArray)
 }

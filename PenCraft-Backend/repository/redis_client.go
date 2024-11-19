@@ -1,10 +1,14 @@
 package repository
 
 import (
+	"PencraftB/models"
+	"PencraftB/utils"
 	"context"
+	"encoding/json"
 	"log"
 	"sync"
 	"time"
+
 	"github.com/go-redis/redis/v8"
 )
 
@@ -101,4 +105,50 @@ func (r *RedisClient) Delete(ctx context.Context, key string) error {
 
 func (r *RedisClient) Close() error {
 	return r.client.Close()
+}
+
+
+// fetches all blogs from Redis using HGetAll
+func (r *RedisClient) fetchAllBlogfromRedis(ctx context.Context) ([]models.Blog, error) {
+
+	// fetch all blogs from the "blogs" hash
+	result,err := r.client.HGetAll(ctx, utils.REDIS_BLOG_COLLECTION).Result()
+	if err != nil {
+		return nil, err;
+	}
+
+	var listOfBlog []models.Blog;
+	for _, blogData := range result {
+		var blog models.Blog
+
+		// Unmarshal each student's JSON data
+		err := json.Unmarshal([]byte(blogData), &blog)
+		if err!= nil {
+			return nil, err;
+		}
+
+		listOfBlog = append(listOfBlog, blog)
+	}
+
+	return listOfBlog, nil;
+}
+
+
+// saving blogs to redis using HSet
+func (r *RedisClient) SaveAllBlogtoRedis(ctx context.Context, listOfBlog []models.Blog) {
+
+	for _,blogItem := range listOfBlog {
+		
+		blogData, err := json.Marshal(blogItem)
+		if err != nil {
+			log.Fatalf("Error marshalling student: %v", err)
+		}
+
+		// store each blog in Redis Hash with BlogId as key.
+		err = r.client.HSet(ctx, utils.REDIS_BLOG_COLLECTION, blogData).Err()
+		if err != nil {
+			log.Fatalf("Error storing blog in Redis: %v", err)
+		}
+
+	}
 }

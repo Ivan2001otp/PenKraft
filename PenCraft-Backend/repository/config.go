@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"PencraftB/utils"
 	"fmt"
 	"log"
 	"time"
@@ -21,7 +20,7 @@ func ReadEnvFile() *map[string]string {
 	
 	if err!=nil {
 		log.Println(err)
-		utils.Logger("Error loading .env File")
+		log.Println("Error loading .env File")
 		log.Fatal("Fatal error!")
 	} 
 

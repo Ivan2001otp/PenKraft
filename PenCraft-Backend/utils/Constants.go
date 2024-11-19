@@ -10,3 +10,6 @@ var BLOG_COLLECTION = "Blogs"
 // collection names
 var ALL_TAG string = "All Tags"
 var BLOG_R_TAG string = "Blog_R_Tag"
+
+// redis key names
+var REDIS_BLOG_COLLECTION = "Blogs"

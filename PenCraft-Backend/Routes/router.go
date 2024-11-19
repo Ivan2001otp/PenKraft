@@ -9,10 +9,11 @@ import (
 func Router() *mux.Router {
 	router := mux.NewRouter();
 
-	router.Handle("/createblog", service.RateLimiter(controller.CreateBlogController)).Methods("POST")
-	router.Handle("/addtag",service.RateLimiter(controller.CreateTagController)).Methods("POST")
+	router.Handle("/createblog", service.RateLimiter(controller.CreateBlogController)).Methods("POST");
+	router.Handle("/addtag",service.RateLimiter(controller.CreateTagController)).Methods("POST");
 	
-	router.Handle("/getalltags",service.RateLimiter(controller.FetchAllTagController)).Methods("GET")
+	router.Handle("/getalltags",service.RateLimiter(controller.FetchAllTagController)).Methods("GET");
+	router.Handle("/getallblogs", service.RateLimiter(controller.FetchAllBlogController)).Methods("GET");
 
 	return router;
 }

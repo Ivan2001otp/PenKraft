@@ -2,7 +2,6 @@ package main
 
 import (
 	redisDb "PencraftB/repository"
-	"PencraftB/utils"
 	mongoDb "PencraftB/repository"
 	routers  "PencraftB/Routes"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 )
 
 func main(){
-	utils.Logger("Started main driver function")
+	log.Println("Started main driver function")
 
 	client := mongoDb.NewDBClient()
 	rdb := redisDb.GetRedisInstance()
