@@ -41,6 +41,7 @@ func processQueue() {
 
 		var operation models.Operation
 		err = json.Unmarshal([]byte(*blogData), &operation)
+		log.Println("Request body is ",operation.Data);
 
 		if err != nil {
 			log.Println("Failed to unmarshall blog data at cron")
@@ -48,7 +49,7 @@ func processQueue() {
 			continue
 		}
 
-		log.Println("Saving blog %s in db", operation.Data.Blog_id)
+		log.Printf("Saving blog %s in db....", operation.Data.Blog_id)
 
 		switch operation.Operation_type {
 		case utils.CREATE_OPS:
@@ -86,7 +87,7 @@ func main() {
 	mongoClient = db.NewDBClient()
 	cronScheduler := cron.New()
 
-	cronScheduler.AddFunc("*/2 * * * *", func() {
+	cronScheduler.AddFunc("*/1 * * * *", func() {
 		log.Println("Executing cron job : processQueue")
 		processQueue()
 	})

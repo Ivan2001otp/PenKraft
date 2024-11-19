@@ -62,7 +62,6 @@ func createRedisClient() *redis.Client {
 // Fetch the blogkey from message queue
 func (r *RedisClient) PopBlogKeyFromQueue(ctx context.Context,queueName string)(*[]string,error){
 	blogKey, err := r.client.BLPop(ctx, 0, queueName).Result()
-
 	if err!= nil {
 		return nil,err;
 	}
@@ -73,28 +72,25 @@ func (r *RedisClient) PopBlogKeyFromQueue(ctx context.Context,queueName string)(
 
 func (r *RedisClient) PushToMessageQueue(ctx context.Context, queueName string, redisKey string) error{
 	err := r.client.LPush(ctx,queueName, redisKey).Err()
-
 	return err;
 }
 
 // Fetch the blogData from cache by blogkey
 func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName string,blogKey string) ( *string , error){
-	blogData, err := r.client.Get(ctx, blogKey).Result()
+	blogData, err := r.client.HGet(ctx, utils.BLOG_COLLECTION ,blogKey).Result()
 
 	if err != nil {
 		log.Printf("Error retreiving the blogdata from blogKey from redisQueue. %v",err)
 		return nil,err;
 	}
-	
 
-	r.client.Del(ctx, blogKey)
 	return &blogData, nil;
 }
 
 
 func (r *RedisClient) Set(ctx context.Context, operation models.Operation) error{
 	// return r.client.Set(ctx, key, value, ttl).Err()
-	blogData, err := json.Marshal(operation.Data);
+	blogData, err := json.Marshal(operation);
 
 	if err != nil {
 		log.Fatalf("Error while saving soloBlog : %v",err)
@@ -132,15 +128,15 @@ func (r *RedisClient) FetchAllBlogfromRedis(ctx context.Context) ([]models.Blog,
 
 	var listOfBlog []models.Blog;
 	for _, blogData := range result {
-		var blog models.Blog
+		var payload models.Operation
 
 		// Unmarshal each student's JSON data
-		err := json.Unmarshal([]byte(blogData), &blog)
+		err := json.Unmarshal([]byte(blogData), &payload)
 		if err!= nil {
 			return nil, err;
 		}
-
-		listOfBlog = append(listOfBlog, blog)
+		
+		listOfBlog = append(listOfBlog, payload.Data);
 	}
 
 	return listOfBlog, nil;
