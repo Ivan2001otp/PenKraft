@@ -151,19 +151,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		Data:           blogModel,
 	}
 
-	// save data in redis..
-	redisKey := fmt.Sprintf(blogModel.Blog_id)
-
-	// convert the "op" to the slice of bytes . Redis only accepts string or bytes
-	bytes, err := json.Marshal(op)
-	if err != nil {
-		log.Println(err.Error())
-		log.Println("Failed to convert blog model to slice of bytes in Blog controller.")
-		return
-	}
-
-	err = redisClient.Set(context.Background(), redisKey, bytes, utils.TTL)
-
+	err = redisClient.Set(context.Background(), op)
 	if err != nil {
 		log.Printf("Could not store data in redis in blogController %v", err)
 		w.Write([]byte("Failed to save in redis cache"))
@@ -172,6 +160,8 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// push the data to ms queue
+	// save data in redis..
+	redisKey := fmt.Sprintf(blogModel.Blog_id)
 	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, redisKey)
 
 	if err != nil {
@@ -185,8 +175,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		Message: fmt.Sprintf("New blog %s created", blogModel.Title),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	utils.GetSuccessResponse(w, http.StatusCreated);
 
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
 		log.Println("Could not encode success Response for createBlog controller")
@@ -203,38 +192,64 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	var listOfBlog []models.Blog
 	mongoDb := repository.NewDBClient()
-	// redisDb := repository.GetRedisInstance()
+	redisDb := repository.GetRedisInstance()
 
 	// // First check the data in redis
-	// listOfBlog, err := redisDb.FetchAllBlogfromRedis(context.Background())
+	listOfBlog, err := redisDb.FetchAllBlogfromRedis(ctx)
 
-	// if listOfBlog != nil {
+	if err != nil {
+		defer cancel()
+		log.Println("Error on fetching data from redis (FetchAllBlogController)")
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-	// 	defer cancel()
-	// 	//if the data is present in redis, return it.
-	// 	log.Println("Data fetched from redis !")
-	// 	utils.GetSuccessResponse(w, http.StatusOK)
+	if listOfBlog != nil && len(listOfBlog) > 0 {
+		defer cancel()
+		//if the data is present in redis, return it.
+		log.Println("Data fetched from redis !")
+		utils.GetSuccessResponse(w, http.StatusOK)
 
-	// 	json.NewEncoder(w).Encode(status{
-	// 		"status": http.StatusOK,
-	// 		"data":   listOfBlog,
-	// 	})
+		json.NewEncoder(w).Encode(status{
+			"status": http.StatusOK,
+			"data":   listOfBlog,
+		})
 
-	// 	return
-	// }
+		return
+	}
 
 	// Cache-Miss obtained, read the database to get the demanded data.
-	bsonArray, err := mongoDb.FetchAllBlogs()
+	listOfBlog, err = mongoDb.FetchAllBlogs()
 	if err != nil {
-		// defer cancel()
+		defer cancel()
 		log.Fatalf("Something went wrong while fetching from mongo(FetchAllBlogController) : %v", err)
 		return
 	}
 
+	if len(listOfBlog) > 0 {
+		defer cancel()
 
+		err = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION, listOfBlog)
+		if err != nil {
+			log.Println("Failed to delete cache in redis (FetchAllBlogController)")
+			log.Fatalf("Error : %v", err)
+			return
+		}
+
+		// Now the data from MongoDB, is stored in Redis.
+		err = redisDb.SaveAllBlogtoRedis(ctx, listOfBlog)
+		if err != nil {
+			log.Println("Failed to write the new data to redis cache(FetchAllBlogController)!")
+			log.Fatalf("Error : %v", err)
+			return
+		}
+	}
+	// flush out the old data
+
+	defer cancel()
 	utils.GetSuccessResponse(w, http.StatusOK)
-	json.NewEncoder(w).Encode(bsonArray)
+	json.NewEncoder(w).Encode(listOfBlog)
 }

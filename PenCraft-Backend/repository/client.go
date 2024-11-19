@@ -331,7 +331,6 @@ func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 	}
 
 	var listOfBlog []models.Blog
-
 	for cursorResult.Next(ctx) {
 		var blogPost models.Blog
 

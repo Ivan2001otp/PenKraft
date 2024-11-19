@@ -92,8 +92,17 @@ func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName stri
 }
 
 
-func (r *RedisClient) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error{
-	return r.client.Set(ctx, key, value, ttl).Err()
+func (r *RedisClient) Set(ctx context.Context, operation models.Operation) error{
+	// return r.client.Set(ctx, key, value, ttl).Err()
+	blogData, err := json.Marshal(operation.Data);
+
+	if err != nil {
+		log.Fatalf("Error while saving soloBlog : %v",err)
+		return err;
+	}
+
+	return	r.client.HSet(ctx, utils.BLOG_COLLECTION, 
+		operation.Data.Blog_id, blogData).Err()
 }
 
 
@@ -116,7 +125,7 @@ func (r *RedisClient) Close() error {
 func (r *RedisClient) FetchAllBlogfromRedis(ctx context.Context) ([]models.Blog, error) {
 
 	// fetch all blogs from the "blogs" hash
-	result,err := r.client.HGetAll(ctx, utils.REDIS_BLOG_COLLECTION).Result()
+	result,err := r.client.HGetAll(ctx, utils.BLOG_COLLECTION).Result()
 	if err != nil {
 		return nil, err;
 	}
@@ -139,20 +148,45 @@ func (r *RedisClient) FetchAllBlogfromRedis(ctx context.Context) ([]models.Blog,
 
 
 // saving blogs to redis using HSet
-func (r *RedisClient) SaveAllBlogtoRedis(ctx context.Context, listOfBlog []models.Blog) {
+func (r *RedisClient) SaveAllBlogtoRedis(ctx context.Context, listOfBlog []models.Blog) error{
 
 	for _,blogItem := range listOfBlog {
 		
 		blogData, err := json.Marshal(blogItem)
 		if err != nil {
 			log.Fatalf("Error marshalling student: %v", err)
+			return err;
 		}
 
 		// store each blog in Redis Hash with BlogId as key.
-		err = r.client.HSet(ctx, utils.REDIS_BLOG_COLLECTION, blogData).Err()
+		err = r.client.HSet(ctx, utils.BLOG_COLLECTION, blogItem.Blog_id,blogData).Err()
 		if err != nil {
 			log.Fatalf("Error storing blog in Redis: %v", err)
+			return err;
 		}
 
 	}
+
+	return nil;
+}
+
+// delete blog on redis Hset
+// Using HDEL command to delete the records, in batch.
+func (r *RedisClient) DeleteDatafromRedisHashset(ctx context.Context, hashKey string, listOfBlog []models.Blog) error {
+	// err := r.client.HDel(ctx, hashKey, bytes_).Err()
+	pipe := r.client.Pipeline()
+
+	// Add HDEL commands to the pipeline for each blog id.
+	for _, element := range listOfBlog {
+		 pipe.HDel(ctx, hashKey, element.Blog_id)
+	}
+
+	// execute the batch pipeline
+	_, err := pipe.Exec(ctx);
+	if err != nil {
+		log.Fatalf("Failed to execute batch delete: %v", err)
+		return err;
+	}
+
+	return nil;
 }
