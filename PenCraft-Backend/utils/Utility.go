@@ -12,6 +12,11 @@ var TTL time.Duration = 60 * time.Minute;
 
 type status map[string]interface{}
 
+func GetSuccessResponse(w http.ResponseWriter, statusCode int){
+	w.Header().Set("Content-Type", "application/json");
+	w.WriteHeader(statusCode)
+}
+
 func GetErrorResponse(w http.ResponseWriter,statusCode int, message string) {
 	w.Header().Set("Content-Type","application/json")
 	w.WriteHeader(statusCode)

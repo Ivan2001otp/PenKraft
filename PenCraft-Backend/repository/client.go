@@ -5,12 +5,13 @@ import (
 	relations "PencraftB/models/Relations"
 	"PencraftB/utils"
 	"context"
+	// "encoding/json"
 	"log"
 	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -290,37 +291,37 @@ func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface
 	}
 }
 
-func (db *DBClient) FetchAllBlogs() (primitive.M, error) {
+func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
 
 	defer cancel()
 
 	matchStage := bson.D{{Key: "$match",Value: bson.D{}}}
 
-	groupStage := bson.D{{
-		Key: "$group",
-		Value: bson.D{
-			{Key:"_id", Value:nil},
-			{Key:"total_count",Value:bson.D{{Key: "$sum",Value: 1}}},
-			{Key: "data", Value: bson.D{{Key: "$push",Value: "$$ROOT"}}},
-		},
-	}}
+	// groupStage := bson.D{{
+	// 	Key: "$group",
+	// 	Value: bson.D{
+	// 		{Key:"_id", Value:nil},
+	// 		{Key:"total_count",Value:bson.D{{Key: "$sum",Value: 1}}},
+	// 		{Key: "data", Value: bson.D{{Key: "$push",Value: "$$ROOT"}}},
+	// 	},
+	// }}
 
 
-	projectStage := bson.D{
-		{
-			Key: "$project",
-			Value: bson.D{
-				{"_id",0},
-				{"total_count",1},
-				{"data",1},
-			},
-		},
-	}
+	// projectStage := bson.D{
+	// 	{
+	// 		Key: "$project",
+	// 		Value: bson.D{
+	// 			{"_id",0},
+	// 			{"total_count",1},
+	// 			{"data",1},
+	// 		},
+	// 	},
+	// }
 
 	collection := db.GetCollection(utils.BLOG_COLLECTION);
-	result, err := collection.Aggregate(ctx, mongo.Pipeline{
-		matchStage, groupStage, projectStage,
+	cursorResult, err := collection.Aggregate(ctx, mongo.Pipeline{
+		matchStage,
 	})
 
 	if err != nil {
@@ -329,13 +330,23 @@ func (db *DBClient) FetchAllBlogs() (primitive.M, error) {
 		return nil, err;
 	}
 
-	var listOfBlog []bson.M
+	var listOfBlog []models.Blog
 
-	if err = result.All(ctx, &listOfBlog); err != nil {
-		log.Println(err.Error())
-		log.Println("Failed while converting tags to bson.M[]")
-		return nil, err;
+	for cursorResult.Next(ctx) {
+		var blogPost models.Blog
+
+		if err := cursorResult.Decode(&blogPost); err != nil{
+			log.Println("failed to decode blog one by one !")
+			return nil,err;
+		}
+		listOfBlog = append(listOfBlog, blogPost);
 	}
 
-	return listOfBlog[0], nil;
+	if err := cursorResult.Err(); err != nil{
+		log.Println("there was error in cursor in mongo")
+		return nil,err ;
+	}
+
+
+	return listOfBlog, nil;
 }

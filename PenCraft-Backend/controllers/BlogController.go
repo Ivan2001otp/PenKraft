@@ -13,10 +13,16 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	// "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type status map[string]interface{}
+
+type Response struct {
+	Data       []models.Blog `json:"data"`
+	TotalCount int           `json:"total_count"`
+}
 
 // fetches all the available tags for the blogs
 func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
@@ -197,16 +203,38 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mongoDb := repository.NewDBClient()
-	bsonArray, err := mongoDb.FetchAllBlogs()
+	// var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 
+	mongoDb := repository.NewDBClient()
+	// redisDb := repository.GetRedisInstance()
+
+	// // First check the data in redis
+	// listOfBlog, err := redisDb.FetchAllBlogfromRedis(context.Background())
+
+	// if listOfBlog != nil {
+
+	// 	defer cancel()
+	// 	//if the data is present in redis, return it.
+	// 	log.Println("Data fetched from redis !")
+	// 	utils.GetSuccessResponse(w, http.StatusOK)
+
+	// 	json.NewEncoder(w).Encode(status{
+	// 		"status": http.StatusOK,
+	// 		"data":   listOfBlog,
+	// 	})
+
+	// 	return
+	// }
+
+	// Cache-Miss obtained, read the database to get the demanded data.
+	bsonArray, err := mongoDb.FetchAllBlogs()
 	if err != nil {
-		utils.GetErrorResponse(w, http.StatusInternalServerError, "Could not save records in DB")
+		// defer cancel()
+		log.Fatalf("Something went wrong while fetching from mongo(FetchAllBlogController) : %v", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
+	utils.GetSuccessResponse(w, http.StatusOK)
 	json.NewEncoder(w).Encode(bsonArray)
 }

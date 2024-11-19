@@ -91,17 +91,21 @@ func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName stri
 	return &blogData, nil;
 }
 
+
 func (r *RedisClient) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error{
 	return r.client.Set(ctx, key, value, ttl).Err()
 }
+
 
 func (r *RedisClient) Get(ctx context.Context, key string)(string, error){
 	return r.client.Get(ctx,key).Result()
 }
 
+
 func (r *RedisClient) Delete(ctx context.Context, key string) error {
 	return r.client.Del(ctx, key).Err()
 }
+
 
 func (r *RedisClient) Close() error {
 	return r.client.Close()
@@ -109,7 +113,7 @@ func (r *RedisClient) Close() error {
 
 
 // fetches all blogs from Redis using HGetAll
-func (r *RedisClient) fetchAllBlogfromRedis(ctx context.Context) ([]models.Blog, error) {
+func (r *RedisClient) FetchAllBlogfromRedis(ctx context.Context) ([]models.Blog, error) {
 
 	// fetch all blogs from the "blogs" hash
 	result,err := r.client.HGetAll(ctx, utils.REDIS_BLOG_COLLECTION).Result()
