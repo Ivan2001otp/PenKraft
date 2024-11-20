@@ -101,7 +101,11 @@ func (r *RedisClient) Set(ctx context.Context, operation models.Operation) error
 		operation.Data.Blog_id, blogData).Err()
 }
 
+func (r *RedisClient) CleanSlateonCache(ctx context.Context, hashKey string)(error) {
+	return r.client.Del(ctx, hashKey).Err();
+}
 
+// need to change this.
 func (r *RedisClient) Get(ctx context.Context, key string)(string, error){
 	return r.client.Get(ctx,key).Result()
 }

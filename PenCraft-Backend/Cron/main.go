@@ -93,6 +93,7 @@ func main() {
 	})
 
 	cronScheduler.Start()
+	MainDriver()
 
 	//keep the main function running...
 	select {}
