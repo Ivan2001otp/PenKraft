@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-
-	// "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -109,6 +107,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to encode the success response in TagController")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	
 }
 
 // creates blog
@@ -255,6 +254,7 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(listOfBlog)
 }
 
+// we can use this controller to update the body/ softdelete
 func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPut {
@@ -263,22 +263,19 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var requestPayload models.Blog
-	err := json.NewDecoder(r.Body).Decode(&requestPayload);
-	if  err != nil {
+	err := json.NewDecoder(r.Body).Decode(&requestPayload)
+	if err != nil {
 		log.Println(err.Error())
 	}
 
-	blog_id := requestPayload.Blog_id;
-	
-	log.Println("the request body is ",requestPayload)
-
+	blog_id := requestPayload.Blog_id
+	log.Println("the request body is ", requestPayload)
 	log.Println("Blog id to fetched is ", blog_id)
 
 	redisDb := repository.GetRedisInstance()
 	mongoDb := repository.NewDBClient()
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 60*time.Second)
-
 	defer cancel()
 
 	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id, utils.BLOG_COLLECTION)
@@ -309,6 +306,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 		blog.Title = requestPayload.Title
 	}
 
+	blog.Is_deleted = requestPayload.Is_deleted
 
 	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
@@ -333,7 +331,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> redisDb.DeleteDatafromRedisHashset()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return;
+		return
 	}
 
 	err = redisDb.Set(ctx, operationModel)
@@ -344,12 +342,11 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("saved to redis successfully !")
 
-
 	err = mongoDb.UpdateBlog(utils.BLOG_COLLECTION, *blog)
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return;
+		return
 	}
 	log.Println("saved to mongodb successfully !")
 
@@ -359,4 +356,21 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 		"status":  http.StatusOK,
 		"data":    blog,
 	})
+}
+
+func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodDelete {
+		utils.GetErrorResponse(w, http.StatusBadRequest, "Supposed to be DELETE !")
+		return
+	}
+
+	blog_id := r.URL.Query().Get("blog_id")
+	mongoDb := repository.NewDBClient()
+
+	err := mongoDb.DeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
+	if err != nil {
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 }
