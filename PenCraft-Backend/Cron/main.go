@@ -8,7 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-
+	"time"
 	"github.com/robfig/cron/v3"
 )
 
@@ -79,6 +79,20 @@ func processQueue() {
 	}
 }
 
+func flushAllDataFromHashSet() {
+	for {
+		var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+		err := redisClient.CleanSlateonCache(ctx,utils.BLOG_COLLECTION);
+		defer cancel();
+		
+
+		if err != nil {
+			log.Fatalf("Something wrong while delete all data from cache(flush.go) : %v",err);
+			continue
+		}
+	}
+}
+
 func main() {
 
 	log.Println("Cron executing..")
@@ -87,13 +101,17 @@ func main() {
 	mongoClient = db.NewDBClient()
 	cronScheduler := cron.New()
 
+	cronScheduler.AddFunc("*/30 * * * *", func() {
+		log.Println("Executing cron job for flushing cache.")
+	//	flushAllDataFromHashSet()
+	})
+
 	cronScheduler.AddFunc("*/1 * * * *", func() {
 		log.Println("Executing cron job : processQueue")
 		processQueue()
 	})
 
 	cronScheduler.Start()
-	MainDriver()
 
 	//keep the main function running...
 	select {}

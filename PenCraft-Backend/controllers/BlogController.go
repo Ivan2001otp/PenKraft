@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+
 	// "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -175,7 +176,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		Message: fmt.Sprintf("New blog %s created", blogModel.Title),
 	}
 
-	utils.GetSuccessResponse(w, http.StatusCreated);
+	utils.GetSuccessResponse(w, http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(successResponse); err != nil {
 		log.Println("Could not encode success Response for createBlog controller")
@@ -252,4 +253,110 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	utils.GetSuccessResponse(w, http.StatusOK)
 	json.NewEncoder(w).Encode(listOfBlog)
+}
+
+func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPut {
+		utils.GetErrorResponse(w, http.StatusBadRequest, "supposed to be PUT request !")
+		return
+	}
+
+	var requestPayload models.Blog
+	err := json.NewDecoder(r.Body).Decode(&requestPayload);
+	if  err != nil {
+		log.Println(err.Error())
+	}
+
+	blog_id := requestPayload.Blog_id;
+	
+	log.Println("the request body is ",requestPayload)
+
+	log.Println("Blog id to fetched is ", blog_id)
+
+	redisDb := repository.GetRedisInstance()
+	mongoDb := repository.NewDBClient()
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 60*time.Second)
+
+	defer cancel()
+
+	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id, utils.BLOG_COLLECTION)
+
+	if err != nil {
+		log.Fatalf(err.Error())
+		return
+	}
+
+	// updating data
+	if requestPayload.Body != "" {
+		blog.Body = requestPayload.Body
+	}
+
+	if requestPayload.Excerpt != "" {
+		blog.Excerpt = requestPayload.Excerpt
+	}
+
+	if requestPayload.Image != "" {
+		blog.Image = requestPayload.Image
+	}
+
+	if requestPayload.Slug != "" {
+		blog.Slug = requestPayload.Slug
+	}
+
+	if requestPayload.Title != "" {
+		blog.Title = requestPayload.Title
+	}
+
+
+	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+	// save the updated data to mongodb
+	err = mongoDb.UpdateBlog(utils.BLOG_COLLECTION, *blog)
+	if err != nil {
+		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// save the updated data to redis.
+	operationModel := models.Operation{
+		Operation_type: "*",
+		Data:           *blog,
+	}
+
+	// preparing data to delete
+	var oldData []models.Blog
+	oldData = append(oldData, *blog)
+	err = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION, oldData)
+	if err != nil {
+		log.Println("Blog Controller -> UpdateBlogbyBlogid -> redisDb.DeleteDatafromRedisHashset()")
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return;
+	}
+
+	err = redisDb.Set(ctx, operationModel)
+	if err != nil {
+		log.Println("Blog Controller -> UpdateBlogbyBlogid -> redisDb.Set()")
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	log.Println("saved to redis successfully !")
+
+
+	err = mongoDb.UpdateBlog(utils.BLOG_COLLECTION, *blog)
+	if err != nil {
+		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return;
+	}
+	log.Println("saved to mongodb successfully !")
+
+	utils.GetSuccessResponse(w, http.StatusOK)
+	json.NewEncoder(w).Encode(status{
+		"message": fmt.Sprintf("Blog %s updated", blog_id),
+		"status":  http.StatusOK,
+		"data":    blog,
+	})
 }

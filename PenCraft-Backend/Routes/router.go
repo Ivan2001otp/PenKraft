@@ -15,5 +15,7 @@ func Router() *mux.Router {
 	router.Handle("/getalltags",service.RateLimiter(controller.FetchAllTagController)).Methods("GET");
 	router.Handle("/getallblogs", service.RateLimiter(controller.FetchAllBlogController)).Methods("GET");
 
+	router.Handle("/updateblog",service.RateLimiter(controller.UpdateBlogController)).Methods("PUT")
+
 	return router;
 }

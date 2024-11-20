@@ -5,6 +5,8 @@ import (
 	relations "PencraftB/models/Relations"
 	"PencraftB/utils"
 	"context"
+	"fmt"
+
 	// "encoding/json"
 	"log"
 	"sync"
@@ -347,4 +349,40 @@ func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 
 
 	return listOfBlog, nil;
+}
+
+func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) (error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+
+	defer cancel();
+
+	updatedBody := bson.M{
+		"$set": bson.M{
+			"title":blog.Title,
+			"excerpt":blog.Excerpt,
+			"tag_id":blog.Tag_id,
+			"is_deleted":blog.Is_deleted,
+			"updated_at":blog.Updated_at,
+			"body":blog.Body,
+			"image":blog.Image,
+			"slug": blog.Slug,
+		},
+	}
+
+	collection := db.GetCollection(collectionName)
+	filter := bson.M{"blog_id": blog.Blog_id}
+	result, err := collection.UpdateOne(ctx, filter, updatedBody)
+
+	if err != nil {
+		log.Printf("Failed to update blog - %v",err)
+		return err;
+	}
+
+	if result.MatchedCount == 0 {
+		log.Println("No matched count")
+		return fmt.Errorf("Blog %s does not exist",blog.Blog_id);
+	}
+
+	log.Printf("updated %s blog .",blog.Blog_id);
+	return nil;
 }
