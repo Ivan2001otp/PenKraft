@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	// "encoding/json"
 	"log"
 	"sync"
 	"time"
@@ -409,4 +408,23 @@ func (db *DBClient) DeleteBlogbyId(collectionName string, blogId string) error {
 	}
 
 	return nil
+}
+
+func (db *DBClient) DeleteAllRelations(collectionName string) error {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+
+	defer cancel();
+	collection := db.GetCollection(collectionName)
+	
+	filter := bson.M{}// delete all records.
+	result, err := collection.DeleteMany(ctx,filter)
+
+	if err != nil {
+		log.Fatalf("Could not delete all relations - %v",err)
+		return err;
+	}
+	log.Println("Deleted relations - ",result.DeletedCount)
+	
+	return nil;
+
 }

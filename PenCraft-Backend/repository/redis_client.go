@@ -85,7 +85,7 @@ func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName stri
 	return &blogData, nil
 }
 
-func (r *RedisClient) Set(ctx context.Context, operation models.Operation) error {
+func (r *RedisClient) SetinHash(ctx context.Context, operation models.Operation) error {
 	// return r.client.Set(ctx, key, value, ttl).Err()
 	blogData, err := json.Marshal(operation)
 
@@ -107,8 +107,8 @@ func (r *RedisClient) Get(ctx context.Context, key string) (string, error) {
 	return r.client.Get(ctx, key).Result()
 }
 
-func (r *RedisClient) Delete(ctx context.Context, key string) error {
-	return r.client.Del(ctx, key).Err()
+func (r *RedisClient) DeleteFromHashset(ctx context.Context, key string) error {
+	return r.client.HDel(ctx, key).Err()
 }
 
 func (r *RedisClient) Close() error {

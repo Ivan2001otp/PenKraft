@@ -107,7 +107,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to encode the success response in TagController")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	
+
 }
 
 // creates blog
@@ -135,7 +135,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	if validationErr != nil {
 		w.Write([]byte("Validation on request fields failed"))
 		http.Error(w, "Require fields missing or mistyped !", http.StatusBadRequest)
-		log.Fatalf("Error while validating request body %v", validationErr.Error())
+		log.Printf("Error while validating request body %v", validationErr.Error())
 	}
 
 	blogModel.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -151,7 +151,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		Data:           blogModel,
 	}
 
-	err = redisClient.Set(context.Background(), op)
+	err = redisClient.SetinHash(context.Background(), op)
 	if err != nil {
 		log.Printf("Could not store data in redis in blogController %v", err)
 		w.Write([]byte("Failed to save in redis cache"))
@@ -161,8 +161,8 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	// push the data to ms queue
 	// save data in redis..
-	redisKey := fmt.Sprintf(blogModel.Blog_id)
-	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, redisKey)
+	blogId := fmt.Sprintf(blogModel.Blog_id)
+	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, blogId)
 
 	if err != nil {
 		w.Write([]byte("Failed to push task to MQ!"))
@@ -197,7 +197,7 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	mongoDb := repository.NewDBClient()
 	redisDb := repository.GetRedisInstance()
 
-	// // First check the data in redis
+	// First check the data in redis
 	listOfBlog, err := redisDb.FetchAllBlogfromRedis(ctx)
 
 	if err != nil {
@@ -334,7 +334,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = redisDb.Set(ctx, operationModel)
+	err = redisDb.SetinHash(ctx, operationModel)
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> redisDb.Set()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -358,6 +358,62 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+//------********************----------------------********************
+
+// danger function ,that deletes all the data
+func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodDelete {
+		utils.GetErrorResponse(w, http.StatusBadRequest, "Supposed to be DELETE !")
+		return
+	}
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	redisDb := repository.GetRedisInstance()
+
+	defer cancel()
+
+	err := redisDb.DeleteFromHashset(ctx, utils.BLOG_COLLECTION)
+	if err != nil {
+		log.Println("Something went wrong while deleting all data from redis(controllers->blogController->DeleteFromHashset)")
+		log.Fatalf("Wrong while deleting data from redis : %v ", err)
+		return
+	}
+	log.Println("Deleted all data from redis !")
+
+	go func() {
+		mongoDb := repository.NewDBClient()
+
+		// deleting blog data alone
+		err := mongoDb.DeleteAllBlogs(utils.BLOG_COLLECTION)
+		if err != nil {
+			log.Println("Deleting all data went wrong in mongodb !")
+		} else {
+			log.Println("Deleting all blog data went successfull !")
+		}
+
+		// deleting blog - tag relation
+		err = mongoDb.DeleteAllRelations(utils.BLOG_R_TAG)
+		if err != nil {
+			log.Println("Could not delete all relations.BlogController -> DeleteAllDataController()")
+		} else {
+			log.Println("Successfully deleted all the relations")
+		}
+
+	}()
+
+	utils.GetSuccessResponse(w, http.StatusOK)
+	json.NewEncoder(w).Encode(
+		status{
+			"message": "All Blogs deleted",
+			"status":  http.StatusOK,
+			"data":    "All Blogs deleted",
+		},
+	)
+}
+
+//-------******************-------------------------******************
+
 func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodDelete {
@@ -373,4 +429,13 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	utils.GetSuccessResponse(w, http.StatusOK)
+	json.NewEncoder(w).Encode(
+		status{
+			"message": fmt.Sprintf("Blog %s is deleted permanently", blog_id),
+			"status":  http.StatusOK,
+			"data":    blog_id,
+		},
+	)
 }

@@ -17,7 +17,8 @@ func Router() *mux.Router {
 
 	router.Handle("/updateblog", service.RateLimiter(controller.UpdateBlogController)).Methods("PUT")
 
-	router.Handle("/deleteblog/{blog_id}", service.RateLimiter(controller.HardDeleteBlogbyBlogidController)).Methods("DELETE")
-
+	router.Handle("/hdeleteblog/{blog_id}", service.RateLimiter(controller.HardDeleteBlogbyBlogidController)).Methods("DELETE")
+	router.Handle("/deleteall/danger",service.RateLimiter(controller.DeleteAllDataController)).Methods("DELETE");
+	
 	return router
 }
