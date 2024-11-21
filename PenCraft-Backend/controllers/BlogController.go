@@ -276,7 +276,7 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 
 	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId, utils.BLOG_COLLECTION);	
 
-	if err != nil{
+	if err != nil {
 		log.Println("Could not fetch blog by blogid in BlogController -> FetchBlogbyBlogIdController()");
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return;
@@ -293,11 +293,13 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 				"data":blog,
 			},
 		)
+
+		return;
 	}
 
 	// Cache Miss(if the response is not present in redis,fetch from redis and cache the same.)
 	blog,err = mongoDb.FetchBlogbyBlogId(ctx, utils.BLOG_COLLECTION, blogId)
-
+	log.Println(blog);
 
 	if err != nil {
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
