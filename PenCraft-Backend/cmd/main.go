@@ -11,7 +11,7 @@ import (
 func main(){
 	log.Println("Started main driver function")
 
-	client := mongoDb.NewDBClient()
+	client := mongoDb.GetMongoDBClient()
 	rdb := redisDb.GetRedisInstance()
 
 	log.Println("Starting server on :8080")

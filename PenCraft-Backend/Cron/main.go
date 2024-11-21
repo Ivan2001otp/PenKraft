@@ -104,7 +104,7 @@ func main() {
 	log.Println("Cron executing..")
 
 	redisClient = db.GetRedisInstance()
-	mongoClient = db.NewDBClient()
+	mongoClient = db.GetMongoDBClient()
 	cronScheduler := cron.New()
 
 	cronScheduler.AddFunc("*/30 * * * *", func() {

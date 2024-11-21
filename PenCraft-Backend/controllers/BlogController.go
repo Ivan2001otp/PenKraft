@@ -32,7 +32,7 @@ func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mongoDb := repository.NewDBClient()
+	mongoDb := repository.GetMongoDBClient()
 	bsonArray, err := mongoDb.FetchAllTags()
 
 	if err != nil {
@@ -86,7 +86,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 	tag.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 	// save the tag to db directly
-	mongoDb := repository.NewDBClient()
+	mongoDb := repository.GetMongoDBClient()
 	result, err := mongoDb.SaveTagOnly(utils.ALL_TAG, tag)
 	log.Printf("The result after saving to DB is %v", result)
 
@@ -108,7 +108,6 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to encode the success response in TagController")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
 }
 
 // creates blog (POST)
@@ -195,7 +194,7 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 	var listOfBlog []models.Blog
-	mongoDb := repository.NewDBClient()
+	mongoDb := repository.GetMongoDBClient()
 	redisDb := repository.GetRedisInstance()
 
 	// First check the data in redis
@@ -272,7 +271,7 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 	defer cancel();
 
 	redisDb := repository.GetRedisInstance();
-	mongoDb := repository.NewDBClient();
+	mongoDb := repository.GetMongoDBClient();
 
 	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId, utils.BLOG_COLLECTION);	
 
@@ -348,7 +347,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	log.Println("Blog id to fetched is ", blog_id)
 
 	redisDb := repository.GetRedisInstance()
-	mongoDb := repository.NewDBClient()
+	mongoDb := repository.GetMongoDBClient()
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -457,7 +456,7 @@ func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleted all data from redis !")
 
 	go func() {
-		mongoDb := repository.NewDBClient()
+		mongoDb := repository.GetMongoDBClient()
 
 		// deleting blog data alone
 		err := mongoDb.DeleteAllBlogs(utils.BLOG_COLLECTION)
@@ -501,7 +500,7 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 	blog_id := vars["blog_id"]
 	log.Println("Blog id to be deleted : ",blog_id)
 
-	mongoDb := repository.NewDBClient()
+	mongoDb := repository.GetMongoDBClient()
 	redisDb := repository.GetRedisInstance();
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)

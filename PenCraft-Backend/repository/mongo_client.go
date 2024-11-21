@@ -27,7 +27,7 @@ var (
 	once     sync.Once
 )
 
-func NewDBClient() *DBClient {
+func GetMongoDBClient() *DBClient {
 	once.Do(func() {
 
 		config, err := NewMongoDBConfig()
