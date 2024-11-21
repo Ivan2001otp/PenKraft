@@ -24,7 +24,7 @@ type Response struct {
 	TotalCount int           `json:"total_count"`
 }
 
-// fetches all the available tags for the blogs
+// fetches all the available tags for the blogs (GET)
 func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
@@ -47,7 +47,7 @@ func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(bsonArray)
 }
 
-// creates tags
+// creates tags (POST)
 func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -111,7 +111,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// creates blog
+// creates blog (POST)
 func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -255,7 +255,79 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(listOfBlog)
 }
 
-// we can use this controller to update the body/ softdelete
+
+// fetch blog by blogId (GET)
+func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		utils.GetErrorResponse(w, http.StatusMethodNotAllowed, "supposed to be GET request !")
+		return;
+	}
+
+	vars := mux.Vars(r)
+	blogId := vars["blog_id"];
+	log.Println("Fetching blog with blog-id : ",blogId)
+
+	var ctx,cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	defer cancel();
+
+	redisDb := repository.GetRedisInstance();
+	mongoDb := repository.NewDBClient();
+
+	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId, utils.BLOG_COLLECTION);	
+
+	if err != nil{
+		log.Println("Could not fetch blog by blogid in BlogController -> FetchBlogbyBlogIdController()");
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return;
+	}
+
+	// if the response is in redis, fetch it from main memory itself.(Cache Hit case.)
+	if blog != nil {
+		
+		utils.GetSuccessResponse(w, http.StatusAccepted)
+		json.NewEncoder(w).Encode(
+			status{
+				"message":"success",
+				"status":http.StatusAccepted,
+				"data":blog,
+			},
+		)
+	}
+
+	// Cache Miss(if the response is not present in redis,fetch from redis and cache the same.)
+	blog,err = mongoDb.FetchBlogbyBlogId(ctx, utils.BLOG_COLLECTION, blogId)
+
+
+	if err != nil {
+		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return;
+	}
+	// caching in redis
+	log.Println("Caching in redis")
+	
+	var tempList[] models.Blog
+	tempList = append(tempList, *blog)
+	err = redisDb.SaveAllBlogtoRedis(ctx, tempList)
+
+	if err != nil {
+		log.Println("Failed to cache the data to redis")
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return;
+	}
+
+	json.NewEncoder(w).Encode(
+		status{
+			"message":"success",
+			"status":http.StatusAccepted,
+			"data":*blog,
+		},
+	)
+
+}
+
+// we can use this controller to update the body/ softdelete(PUT)
 func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPut {
@@ -361,7 +433,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 
 //------********************----------------------********************
 
-// danger function ,that deletes all the data
+// DANGER function ,that deletes all the data(DELETE)
 func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodDelete {
@@ -412,9 +484,10 @@ func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
-
 //-------******************-------------------------******************
 
+
+// Delete specific Blog (DELETE)
 func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodDelete {

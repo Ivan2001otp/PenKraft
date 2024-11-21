@@ -44,7 +44,6 @@ func NewDBClient() *DBClient {
 	})
 
 	return instance
-
 }
 
 func (db *DBClient) connect() {
@@ -366,6 +365,28 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 
 	log.Printf("updated %s blog .", blog.Blog_id)
 	return nil
+}
+
+
+func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, collectionName string, blogId string) (*models.Blog,error) {
+
+	collection := db.GetCollection(collectionName)
+
+	var blog models.Blog;
+
+	filter := bson.M{"blog_id":blogId}
+	err := collection.FindOne(ctx, filter).Decode(&blog)
+
+	if err != nil{ 
+		if err == mongo.ErrNoDocuments{
+			log.Printf("Blog with %s does not exist in mongo.",blogId)
+			return nil,err;
+		}
+		log.Println("Failed to find specific blog : ",err.Error())
+		return nil,err;
+	}
+
+	return &blog,nil;
 }
 
 func (db *DBClient) DeleteAllBlogs(collectionName string) error {
