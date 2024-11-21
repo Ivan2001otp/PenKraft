@@ -145,7 +145,12 @@ func (r *RedisClient) SaveAllBlogtoRedis(ctx context.Context, listOfBlog []model
 
 	for _, blogItem := range listOfBlog {
 
-		blogData, err := json.Marshal(blogItem)
+		payload := models.Operation{
+			Operation_type: "*",
+			Data: blogItem,
+		}
+
+		blogData, err := json.Marshal(payload)
 		if err != nil {
 			log.Fatalf("Error marshalling student: %v", err)
 			return err
@@ -171,6 +176,7 @@ func (r *RedisClient) DeleteDatafromRedisHashset(ctx context.Context, hashKey st
 
 	// Add HDEL commands to the pipeline for each blog id.
 	for _, element := range listOfBlog {
+		log.Println(element)
 		pipe.HDel(ctx, hashKey, element.Blog_id)
 	}
 
@@ -186,9 +192,9 @@ func (r *RedisClient) DeleteDatafromRedisHashset(ctx context.Context, hashKey st
 
 // fetch blog from redis by blog-id
 // fetch the blog data from Hashset.
-func (r *RedisClient) FetchBlogbyBlogid(ctx context.Context, hashKey string, collectionName string) (*models.Blog, error) {
+func (r *RedisClient) FetchBlogbyBlogid(ctx context.Context, blogId string, collectionName string) (*models.Blog, error) {
 
-	result, err := r.client.HGet(ctx, collectionName, hashKey).Result()
+	result, err := r.client.HGet(ctx, collectionName, blogId).Result()
 
 	if err != nil {
 		log.Printf("Error while fetching blog by blogid from redis - %v", err)

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -421,11 +422,42 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blog_id := r.URL.Query().Get("blog_id")
-	mongoDb := repository.NewDBClient()
+	vars := mux.Vars(r)
+	blog_id := vars["blog_id"]
+	log.Println("Blog id to be deleted : ",blog_id)
 
-	err := mongoDb.DeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
+	mongoDb := repository.NewDBClient()
+	redisDb := repository.GetRedisInstance();
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	defer cancel();
+
+
+	// removing data from main memory.
+	blog,err := redisDb.FetchBlogbyBlogid(ctx, blog_id, utils.BLOG_COLLECTION)
 	if err != nil {
+		log.Println("HardDeleteBlogByBlogidController-> redisDb.FetchBlogbyBlogid()")
+		log.Println("Could not fetch blog from redis by blog-id");
+		http.Error(w, err.Error(), http.StatusInternalServerError);
+		return;
+	}
+
+	var tempList []models.Blog
+	tempList = append(tempList, *blog)
+	err  = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION,tempList)
+
+	if err != nil{
+		log.Println("HardDeleteBlogByBlogidController-> redisDb.DeleteDatafromRedisHashset()")
+		log.Println("Could not delete blog from redis by blog-id");
+		http.Error(w, err.Error(), http.StatusInternalServerError);
+		return;
+	}
+
+	// remove data from secondary memory mongoDB.
+	err = mongoDb.DeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
+	if err != nil {
+		log.Println("HardDeleteBlogByBlogidController->DeleteBlogbyId()")
+		log.Println("failed to delete blog by blogid from mongodb")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
