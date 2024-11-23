@@ -64,7 +64,9 @@ func (r *RedisClient) PopBlogKeyFromQueue(ctx context.Context, queueName string)
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println("Blog key  len : ",len(blogKey))
+	log.Println("Blog key list is ",blogKey)
+	
 	return &blogKey, nil
 }
 
@@ -86,7 +88,6 @@ func (r *RedisClient) PopBlogdataFromBlogkey(ctx context.Context, queueName stri
 }
 
 func (r *RedisClient) SetinHash(ctx context.Context, operation models.Operation) error {
-	// return r.client.Set(ctx, key, value, ttl).Err()
 	blogData, err := json.Marshal(operation)
 
 	if err != nil {

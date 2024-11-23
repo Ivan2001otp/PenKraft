@@ -22,7 +22,7 @@ func processQueue() {
 	for {
 
 		blogKey, err := redisClient.PopBlogKeyFromQueue(context.Background(), utils.MESSAGE_QUEUE_NAME)
-
+		
 		if err != nil {
 			continue
 		}
@@ -46,7 +46,6 @@ func processQueue() {
 
 			var operation models.Operation
 			err = json.Unmarshal([]byte(*blogData), &operation)
-			log.Println("Request body is ", operation.Data)
 
 			if err != nil {
 				log.Println("Failed to unmarshall blog data at cron")

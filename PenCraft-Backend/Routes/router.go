@@ -15,7 +15,7 @@ func Router() *mux.Router {
 	router.Handle("/api/v1/blogs", service.RateLimiter(controller.FetchAllBlogController)).Methods("GET")
 	router.Handle("/api/v1/blog/{blog_id}", service.RateLimiter(controller.FetchBlogbyBlogIdController)).Methods("GET")
 	
-	router.Handle("/api/v1/blog", service.RateLimiter(controller.UpdateBlogController)).Methods("PUT")
+	router.Handle("/api/v1/blog/{blog_id}", service.RateLimiter(controller.UpdateBlogController)).Methods("PUT")
 	
 	router.Handle("/api/v1/blog/{blog_id}", service.RateLimiter(controller.SoftDeleteBlogbyidController)).Methods("DELETE")
 	// router.Handle("/api/v1/deleteall", service.RateLimiter(controller.DeleteAllDataController)).Methods("DELETE")

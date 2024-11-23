@@ -19,8 +19,6 @@ import (
 
 type status map[string]interface{}
 
-
-
 // creates blog (POST)
 func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
@@ -166,60 +164,59 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(listOfBlog)
 }
 
-
 // fetch blog by blogId (GET)
 func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
 		utils.GetErrorResponse(w, http.StatusMethodNotAllowed, "supposed to be GET request !")
-		return;
+		return
 	}
 
 	vars := mux.Vars(r)
-	blogId := vars["blog_id"];
-	log.Println("Fetching blog with blog-id : ",blogId)
+	blogId := vars["blog_id"]
+	log.Println("Fetching blog with blog-id : ", blogId)
 
-	var ctx,cancel = context.WithTimeout(context.Background(), 80 * time.Second)
-	defer cancel();
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
 
-	redisDb := repository.GetRedisInstance();
-	mongoDb := repository.GetMongoDBClient();
+	redisDb := repository.GetRedisInstance()
+	mongoDb := repository.GetMongoDBClient()
 
-	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId);	
+	blog, err := redisDb.FetchBlogbyBlogid(ctx, blogId)
 
 	if err != nil {
-		log.Println("Could not fetch blog by blogid in BlogController -> FetchBlogbyBlogIdController()");
+		log.Println("Could not fetch blog by blogid in BlogController -> FetchBlogbyBlogIdController()")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return;
+		return
 	}
 
 	// if the response is in redis, fetch it from main memory itself.(Cache Hit case.)
 	if blog != nil {
-		
+
 		utils.GetSuccessResponse(w, http.StatusAccepted)
 		json.NewEncoder(w).Encode(
 			status{
-				"message":"success",
-				"status":http.StatusAccepted,
-				"data":blog,
+				"message": "success",
+				"status":  http.StatusAccepted,
+				"data":    blog,
 			},
 		)
 
-		return;
+		return
 	}
 
 	// Cache Miss(if the response is not present in redis,fetch from redis and cache the same.)
-	blog,err = mongoDb.FetchBlogbyBlogId(ctx, utils.BLOG_COLLECTION, blogId)
-	log.Println(blog);
+	blog, err = mongoDb.FetchBlogbyBlogId(ctx, utils.BLOG_COLLECTION, blogId)
+	log.Println(blog)
 
 	if err != nil {
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
-		return;
+		return
 	}
 	// caching in redis
 	log.Println("Caching in redis")
-	
-	var tempList[] models.Blog
+
+	var tempList []models.Blog
 	tempList = append(tempList, *blog)
 	err = redisDb.SaveAllBlogtoRedis(ctx, tempList)
 
@@ -227,14 +224,14 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to cache the data to redis")
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return;
+		return
 	}
 
 	json.NewEncoder(w).Encode(
 		status{
-			"message":"success",
-			"status":http.StatusAccepted,
-			"data":*blog,
+			"message": "success",
+			"status":  http.StatusAccepted,
+			"data":    *blog,
 		},
 	)
 }
@@ -243,9 +240,10 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPut {
-		utils.GetErrorResponse(w, http.StatusBadRequest, "supposed to be PUT request !")
+		utils.GetErrorResponse(w, http.StatusMethodNotAllowed, "supposed to be PUT request !")
 		return
 	}
+
 
 	var requestPayload models.Blog
 	err := json.NewDecoder(r.Body).Decode(&requestPayload)
@@ -254,9 +252,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blog_id := requestPayload.Blog_id
-	log.Println("the request body is ", requestPayload)
-	log.Println("Blog id to fetched is ", blog_id)
-
+	
 	redisDb := repository.GetRedisInstance()
 	mongoDb := repository.GetMongoDBClient()
 
@@ -290,7 +286,6 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	if requestPayload.Title != "" {
 		blog.Title = requestPayload.Title
 	}
-
 
 	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
@@ -395,8 +390,8 @@ func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
-//-------******************-------------------------******************
 
+//-------******************-------------------------******************
 
 // Delete specific Blog (DELETE)
 func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
@@ -408,47 +403,45 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	blog_id := vars["blog_id"]
-	log.Println("Blog id to be deleted : ",blog_id)
+	log.Println("Blog id to be deleted : ", blog_id)
 
 	mongoDb := repository.GetMongoDBClient()
-	redisDb := repository.GetRedisInstance();
+	redisDb := repository.GetRedisInstance()
 
-	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
-	defer cancel();
-
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
 
 	// removing data from main memory.
-	blog,err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
+	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
 	if err != nil {
 		log.Println("HardDeleteBlogByBlogidController-> redisDb.FetchBlogbyBlogid()")
-		log.Println("Could not fetch blog from redis by blog-id");
-		http.Error(w, err.Error(), http.StatusInternalServerError);
-		return;
+		log.Println("Could not fetch blog from redis by blog-id")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var updatedblog models.Blog = *blog;
-	updatedblog.Is_delete = true;
+	var updatedblog models.Blog = *blog
+	updatedblog.Is_delete = true
 
 	var tempList []models.Blog
 	tempList = append(tempList, *blog)
-	err  = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION,tempList)
+	err = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION, tempList)
 
-
-	if err != nil{
+	if err != nil {
 		log.Println("HardDeleteBlogByBlogidController-> redisDb.DeleteDatafromRedisHashset()")
-		log.Println("Could not delete blog from redis by blog-id");
-		http.Error(w, err.Error(), http.StatusInternalServerError);
-		return;
+		log.Println("Could not delete blog from redis by blog-id")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	tempList = []models.Blog{}
 	tempList = append(tempList, updatedblog)
 	err = redisDb.SaveAllBlogtoRedis(ctx, tempList)
 
-	if err !=nil{
+	if err != nil {
 		log.Println("Could not save blog back to redis by id (SoftDeleteBlogbyidController)")
-		http.Error(w, err.Error(), http.StatusInternalServerError);
-		return;
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// remove data from secondary memory mongoDB.
