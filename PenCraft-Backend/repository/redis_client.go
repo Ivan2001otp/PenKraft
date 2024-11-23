@@ -190,11 +190,12 @@ func (r *RedisClient) DeleteDatafromRedisHashset(ctx context.Context, hashKey st
 	return nil
 }
 
+
 // fetch blog from redis by blog-id
 // fetch the blog data from Hashset.
-func (r *RedisClient) FetchBlogbyBlogid(ctx context.Context, blogId string, collectionName string) (*models.Blog, error) {
+func (r *RedisClient) FetchBlogbyBlogid(ctx context.Context, blogId string) (*models.Blog, error) {
 
-	result, err := r.client.HGet(ctx, collectionName, blogId).Result()
+	result, err := r.client.HGet(ctx, utils.BLOG_COLLECTION, blogId).Result()
 
 	if err != nil {
 		log.Printf("Error while fetching blog by blogid from redis - %v", err)

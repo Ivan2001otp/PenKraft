@@ -19,96 +19,7 @@ import (
 
 type status map[string]interface{}
 
-type Response struct {
-	Data       []models.Blog `json:"data"`
-	TotalCount int           `json:"total_count"`
-}
 
-// fetches all the available tags for the blogs (GET)
-func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "Invalid request type. Supposed to be GET request", http.StatusBadRequest)
-		return
-	}
-
-	mongoDb := repository.GetMongoDBClient()
-	bsonArray, err := mongoDb.FetchAllTags()
-
-	if err != nil {
-		log.Println("Error while fetching from DB !")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(bsonArray)
-}
-
-// creates tags (POST)
-func CreateTagController(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request type. Supposed to be POST request", http.StatusBadRequest)
-		return
-	}
-
-	var tag models.Tag
-	validationController := validator.New()
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&tag)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to parse request body"), http.StatusBadRequest)
-		log.Println("Failed to parse Tag request in tagcontroller")
-		return
-	}
-
-	validationErr := validationController.Struct(tag)
-
-	if validationErr != nil {
-		w.Write([]byte("validation error persists when creating tags"))
-		http.Error(w, "validation errors", http.StatusBadRequest)
-		return
-	}
-
-	if tag.Tag_name == "" {
-		http.Error(w, "Required field tagname not given !", http.StatusInternalServerError)
-		return
-	}
-
-	tag.ID = primitive.NewObjectID()
-	tag.Tag_id = tag.ID.Hex()
-	tag.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	tag.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-
-	// save the tag to db directly
-	mongoDb := repository.GetMongoDBClient()
-	result, err := mongoDb.SaveTagOnly(utils.ALL_TAG, tag)
-	log.Printf("The result after saving to DB is %v", result)
-
-	if err != nil {
-		log.Println("Something went wrong while saving TAG to db !")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	successResponse := models.SuccessResponse{
-		ID:      tag.Tag_id,
-		Message: fmt.Sprintf("New Tag -> %s created", tag.Tag_name),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
-	if err = json.NewEncoder(w).Encode(successResponse); err != nil {
-		log.Println("Failed to encode the success response in TagController")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
 
 // creates blog (POST)
 func CreateBlogController(w http.ResponseWriter, r *http.Request) {
@@ -273,7 +184,7 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 	redisDb := repository.GetRedisInstance();
 	mongoDb := repository.GetMongoDBClient();
 
-	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId, utils.BLOG_COLLECTION);	
+	blog,err := redisDb.FetchBlogbyBlogid(ctx, blogId);	
 
 	if err != nil {
 		log.Println("Could not fetch blog by blogid in BlogController -> FetchBlogbyBlogIdController()");
@@ -325,7 +236,6 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 			"data":*blog,
 		},
 	)
-
 }
 
 // we can use this controller to update the body/ softdelete(PUT)
@@ -352,7 +262,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id, utils.BLOG_COLLECTION)
+	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
 
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -508,7 +418,7 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 
 
 	// removing data from main memory.
-	blog,err := redisDb.FetchBlogbyBlogid(ctx, blog_id, utils.BLOG_COLLECTION)
+	blog,err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
 	if err != nil {
 		log.Println("HardDeleteBlogByBlogidController-> redisDb.FetchBlogbyBlogid()")
 		log.Println("Could not fetch blog from redis by blog-id");

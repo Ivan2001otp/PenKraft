@@ -89,6 +89,7 @@ func (db *DBClient) Close() {
 	}
 }
 
+// tag handlers
 func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interface{}, error) {
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -180,6 +181,42 @@ func (db *DBClient) FetchAllTags() (interface{}, error) {
 	return allTags, nil
 }
 
+// Fetch tag by tagid
+func (db *DBClient) FetchTagbyId(ctx context.Context,collectionName string, tagId string) (*models.Tag, error){
+	
+	collection := db.GetCollection(collectionName);
+
+	filter := bson.M{"tag_id":tagId};
+
+	result := collection.FindOne(ctx, filter)
+	
+	var tag models.Tag 
+	err := result.Decode(&tag)
+	if err != nil {
+		log.Println("Could not decode the tag")
+		return nil,err;
+	}
+
+	return &tag, nil;
+}
+
+// Delete tag by id
+func (db *DBClient) HardDeleteTagbyId(ctx context.Context,tagId string) (error) {
+
+	filter := bson.M{"tag_id":tagId}
+	collection := db.GetCollection(utils.ALL_TAG)
+
+	_,err := collection.DeleteOne(ctx,filter)
+
+	if err!= nil{
+		log.Printf("Error while deleting tag by id %v",err)
+		return err;
+	}
+
+	return nil;
+}
+
+// relation handlers
 func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 	defer cancel()
@@ -228,6 +265,8 @@ func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blo
 	}
 }
 
+
+// Blog handlers
 func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface{}, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 	defer cancel()
@@ -329,6 +368,28 @@ func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 	}
 
 	return listOfBlog, nil
+}
+
+func (db *DBClient) SoftDeleteTagbyId(ctx context.Context ,tagId string) ( error) {
+
+	// mention softdelete param and set it to true.
+	updatedBody := bson.M{
+		"$set" : bson.M{
+			"is_delete":true,
+		},
+	}
+
+	collection := db.GetCollection(utils.ALL_TAG)
+	result,err := collection.UpdateByID(ctx, tagId, updatedBody)
+
+	if err != nil {
+		log.Println("Could not soft delete the tag");
+		log.Printf("%v",err)
+		return err;
+	}
+
+	log.Printf("Update count is : %v",result.UpsertedCount);
+	return nil;
 }
 
 func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
