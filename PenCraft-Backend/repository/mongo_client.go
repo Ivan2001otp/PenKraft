@@ -10,7 +10,6 @@ import (
 	"log"
 	"sync"
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson"
 	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -138,12 +137,9 @@ func (db *DBClient) SoftDeleteTagbyId(ctx context.Context, tagId string) error {
 }
 
 // tag handlers
-func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interface{}, error) {
+func (db *DBClient) SaveTagOnly(ctx context.Context,tag models.Tag) (interface{}, error) {
 
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.ALL_TAG)
 	resultChan := make(chan *mongo.InsertOneResult)
 	errChan := make(chan error)
 
@@ -181,10 +177,7 @@ func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interfac
 	}
 }
 
-func (db *DBClient) FetchAllTags() (interface{}, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-
-	defer cancel()
+func (db *DBClient) FetchAllTags(ctx context.Context) (interface{}, error) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.D{}}}
 
@@ -230,9 +223,9 @@ func (db *DBClient) FetchAllTags() (interface{}, error) {
 }
 
 // Fetch tag by tagid
-func (db *DBClient) FetchTagbyId(ctx context.Context, collectionName string, tagId string) (*models.Tag, error) {
+func (db *DBClient) FetchTagbyId(ctx context.Context, tagId string) (*models.Tag, error) {
 
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.ALL_TAG)
 
 	filter := bson.M{"tag_id": tagId}
 
@@ -271,11 +264,11 @@ BLOG OPERATIONS
 */
 
 // Blog handlers
-func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface{}, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	defer cancel()
+func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
+	defer cancel();
 
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
 	resultChan := make(chan *mongo.InsertOneResult)
 	errChan := make(chan error)
@@ -317,10 +310,7 @@ func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface
 	}
 }
 
-func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
-	defer cancel()
+func (db *DBClient) FetchAllBlogs(ctx context.Context,) ([]models.Blog, error) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.D{}}}
 
@@ -374,10 +364,7 @@ func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 	return listOfBlog, nil
 }
 
-func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
-	defer cancel()
+func (db *DBClient) UpdateBlog(ctx context.Context,blog models.Blog) error {
 
 	updatedBody := bson.M{
 		"$set": bson.M{
@@ -391,7 +378,7 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 		},
 	}
 
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.BLOG_COLLECTION)
 	filter := bson.M{"blog_id": blog.Blog_id}
 	var upsert bool = false
 
@@ -414,9 +401,9 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 	return nil
 }
 
-func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, collectionName string, blogId string) (*models.Blog, error) {
+func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, blogId string) (*models.Blog, error) {
 
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
 	var blog models.Blog
 
@@ -435,13 +422,10 @@ func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, collectionName string
 	return &blog, nil
 }
 
-func (db *DBClient) DeleteAllBlogs(collectionName string) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
-	defer cancel()
+func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
 
 	filter := bson.M{} // empty filter matches
-	collection := db.GetCollection(collectionName)
+	collection := db.GetCollection(utils.BLOG_COLLECTION)
 	result, err := collection.DeleteMany(ctx, filter)
 
 	if err != nil {
@@ -456,10 +440,7 @@ func (db *DBClient) DeleteAllBlogs(collectionName string) error {
 	return nil
 }
 
-func (db *DBClient) SoftDeleteBlogbyId(collectionName string, blogId string) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
-	defer cancel()
+func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context,blogId string) error {
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
 	filter := bson.M{"blog_id": blogId}
@@ -492,9 +473,8 @@ func (db *DBClient) SoftDeleteBlogbyId(collectionName string, blogId string) err
 // **********************************************************************
 // ***********************************************************************
 func (db *DBClient) DeleteAllRelations(collectionName string) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-
-	defer cancel()
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
+	defer cancel();
 	collection := db.GetCollection(collectionName)
 
 	filter := bson.M{} // delete all records.
@@ -507,14 +487,12 @@ func (db *DBClient) DeleteAllRelations(collectionName string) error {
 	log.Println("Deleted relations - ", result.DeletedCount)
 
 	return nil
-
 }
 
 // relation handlers
 func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	defer cancel()
-
+var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
+	defer cancel();
 	collection := db.GetCollection(collectionName)
 	resultChan := make(chan *mongo.InsertOneResult)
 	errChan := make(chan error)

@@ -57,7 +57,10 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 	// save the tag to db directly
 	mongoDb := repository.GetMongoDBClient()
-	result, err := mongoDb.SaveTagOnly(utils.ALL_TAG, tag)
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	defer cancel();
+
+	result, err := mongoDb.SaveTagOnly(ctx, tag)
 	log.Printf("The result after saving to DB is %v", result)
 
 	if err != nil {
@@ -88,8 +91,10 @@ func FetchAllTagController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
+	defer cancel();
 	mongoDb := repository.GetMongoDBClient()
-	bsonArray, err := mongoDb.FetchAllTags()
+	bsonArray, err := mongoDb.FetchAllTags(ctx)
 
 	if err != nil {
 		log.Println("Error while fetching from DB !")
@@ -120,7 +125,7 @@ func FetchTagController(w http.ResponseWriter, r *http.Request) {
 
 	mongoDb := repository.GetMongoDBClient();
 
-	tag,err := mongoDb.FetchTagbyId(ctx, utils.ALL_TAG, tag_id)
+	tag,err := mongoDb.FetchTagbyId(ctx,tag_id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError);

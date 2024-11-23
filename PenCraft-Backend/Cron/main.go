@@ -58,7 +58,7 @@ func processQueue() {
 				log.Printf("Saving blog %s in db....", operation.Data.Blog_id)
 
 				log.Println("Create operation initialized")
-				mongoClient.SaveBlog(utils.BLOG_COLLECTION, operation.Data)
+				mongoClient.SaveBlog(operation.Data)
 
 				var relation relations.R_Tag_Blog
 				relation.Blog_id = operation.Data.Blog_id

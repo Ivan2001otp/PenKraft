@@ -132,7 +132,7 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache-Miss obtained, read the database to get the demanded data.
-	listOfBlog, err = mongoDb.FetchAllBlogs()
+	listOfBlog, err = mongoDb.FetchAllBlogs(ctx)
 	if err != nil {
 		defer cancel()
 		log.Fatalf("Something went wrong while fetching from mongo(FetchAllBlogController) : %v", err)
@@ -206,7 +206,7 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache Miss(if the response is not present in redis,fetch from redis and cache the same.)
-	blog, err = mongoDb.FetchBlogbyBlogId(ctx, utils.BLOG_COLLECTION, blogId)
+	blog, err = mongoDb.FetchBlogbyBlogId(ctx,blogId)
 	log.Println(blog)
 
 	if err != nil {
@@ -290,7 +290,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 	// save the updated data to mongodb
-	err = mongoDb.UpdateBlog(utils.BLOG_COLLECTION, *blog)
+	err = mongoDb.UpdateBlog(ctx,*blog)
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -321,7 +321,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("saved to redis successfully !")
 
-	err = mongoDb.UpdateBlog(utils.BLOG_COLLECTION, *blog)
+	err = mongoDb.UpdateBlog(ctx, *blog)
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -364,7 +364,7 @@ func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 		mongoDb := repository.GetMongoDBClient()
 
 		// deleting blog data alone
-		err := mongoDb.DeleteAllBlogs(utils.BLOG_COLLECTION)
+		err := mongoDb.DeleteAllBlogs(ctx)
 		if err != nil {
 			log.Println("Deleting all data went wrong in mongodb !")
 		} else {
@@ -445,7 +445,7 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// remove data from secondary memory mongoDB.
-	err = mongoDb.SoftDeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
+	err = mongoDb.SoftDeleteBlogbyId(ctx, blog_id)
 	if err != nil {
 		log.Println("HardDeleteBlogByBlogidController->DeleteBlogbyId()")
 		log.Println("failed to delete blog by blogid from mongodb")
