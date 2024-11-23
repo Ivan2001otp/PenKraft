@@ -51,6 +51,7 @@ func CreateTagController(w http.ResponseWriter, r *http.Request) {
 
 	tag.ID = primitive.NewObjectID()
 	tag.Tag_id = tag.ID.Hex()
+	tag.Is_delete=false;
 	tag.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	tag.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 

@@ -89,6 +89,54 @@ func (db *DBClient) Close() {
 	}
 }
 
+/*
+************************************************************************************
+TAG OPERATIONS
+************************************************************************************
+*/
+func (db *DBClient) DeleteAllTags(ctx context.Context) error {
+
+	collection := db.GetCollection(utils.ALL_TAG)
+
+	_, err := collection.DeleteMany(ctx, bson.M{})
+
+	if err != nil {
+		log.Println("Could not delete  all tags")
+		return err
+	}
+
+	return nil
+}
+
+func (db *DBClient) SoftDeleteTagbyId(ctx context.Context, tagId string) error {
+
+	// mention softdelete param and set it to true.
+	updatedBody := bson.M{
+		"$set": bson.M{
+			"is_delete": true,
+		},
+	}
+
+	var upsert bool = true
+
+	filter := bson.M{"tag_id": tagId}
+	option := options.UpdateOptions{
+		Upsert: &upsert,
+	}
+
+	collection := db.GetCollection(utils.ALL_TAG)
+	result, err := collection.UpdateOne(ctx, filter, updatedBody, &option)
+
+	if err != nil {
+		log.Println("Could not soft delete the tag")
+		log.Printf("%v", err)
+		return err
+	}
+
+	log.Printf("Update count is : %v", result.UpsertedCount)
+	return nil
+}
+
 // tag handlers
 func (db *DBClient) SaveTagOnly(collectionName string, tag models.Tag) (interface{}, error) {
 
@@ -182,89 +230,45 @@ func (db *DBClient) FetchAllTags() (interface{}, error) {
 }
 
 // Fetch tag by tagid
-func (db *DBClient) FetchTagbyId(ctx context.Context,collectionName string, tagId string) (*models.Tag, error){
-	
-	collection := db.GetCollection(collectionName);
+func (db *DBClient) FetchTagbyId(ctx context.Context, collectionName string, tagId string) (*models.Tag, error) {
 
-	filter := bson.M{"tag_id":tagId};
+	collection := db.GetCollection(collectionName)
+
+	filter := bson.M{"tag_id": tagId}
 
 	result := collection.FindOne(ctx, filter)
-	
-	var tag models.Tag 
+
+	var tag models.Tag
 	err := result.Decode(&tag)
 	if err != nil {
 		log.Println("Could not decode the tag")
-		return nil,err;
+		return nil, err
 	}
 
-	return &tag, nil;
+	return &tag, nil
 }
 
 // Delete tag by id
-func (db *DBClient) HardDeleteTagbyId(ctx context.Context,tagId string) (error) {
+func (db *DBClient) HardDeleteTagbyId(ctx context.Context, tagId string) error {
 
-	filter := bson.M{"tag_id":tagId}
+	filter := bson.M{"tag_id": tagId}
 	collection := db.GetCollection(utils.ALL_TAG)
 
-	_,err := collection.DeleteOne(ctx,filter)
+	_, err := collection.DeleteOne(ctx, filter)
 
-	if err!= nil{
-		log.Printf("Error while deleting tag by id %v",err)
-		return err;
+	if err != nil {
+		log.Printf("Error while deleting tag by id %v", err)
+		return err
 	}
 
-	return nil;
+	return nil
 }
 
-// relation handlers
-func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	defer cancel()
-
-	collection := db.GetCollection(collectionName)
-	resultChan := make(chan *mongo.InsertOneResult)
-	errChan := make(chan error)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		var blogToTag relations.R_Tag_Blog
-		blogToTag.Blog_id = blog.Blog_id
-		blogToTag.Tag_id = blog.Tag_id
-
-		// checking for blog-relation-tag persistence
-		result, err := collection.InsertOne(ctx, blogToTag)
-		if err != nil {
-			log.Println("Could not save blog in mongo-db (Second) !")
-			errChan <- err
-			return
-		}
-
-		resultChan <- result
-	}()
-
-	// close channels
-	go func() {
-		wg.Wait()
-		close(resultChan)
-		close(errChan)
-	}()
-
-	select {
-	case result := <-resultChan:
-		return result, nil
-
-	case err := <-errChan:
-		return nil, err
-
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
-}
-
+/*
+************************************************************************************
+BLOG OPERATIONS
+************************************************************************************
+*/
 
 // Blog handlers
 func (db *DBClient) SaveBlog(collectionName string, blog models.Blog) (interface{}, error) {
@@ -370,28 +374,6 @@ func (db *DBClient) FetchAllBlogs() ([]models.Blog, error) {
 	return listOfBlog, nil
 }
 
-func (db *DBClient) SoftDeleteTagbyId(ctx context.Context ,tagId string) ( error) {
-
-	// mention softdelete param and set it to true.
-	updatedBody := bson.M{
-		"$set" : bson.M{
-			"is_delete":true,
-		},
-	}
-
-	collection := db.GetCollection(utils.ALL_TAG)
-	result,err := collection.UpdateByID(ctx, tagId, updatedBody)
-
-	if err != nil {
-		log.Println("Could not soft delete the tag");
-		log.Printf("%v",err)
-		return err;
-	}
-
-	log.Printf("Update count is : %v",result.UpsertedCount);
-	return nil;
-}
-
 func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 
@@ -402,7 +384,6 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 			"title":      blog.Title,
 			"excerpt":    blog.Excerpt,
 			"tag_id":     blog.Tag_id,
-			"is_deleted": blog.Is_deleted,
 			"updated_at": blog.Updated_at,
 			"body":       blog.Body,
 			"image":      blog.Image,
@@ -412,7 +393,12 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 
 	collection := db.GetCollection(collectionName)
 	filter := bson.M{"blog_id": blog.Blog_id}
-	result, err := collection.UpdateOne(ctx, filter, updatedBody)
+	var upsert bool = false
+
+	option := options.UpdateOptions{
+		Upsert: &upsert,
+	}
+	result, err := collection.UpdateOne(ctx, filter, updatedBody, &option)
 
 	if err != nil {
 		log.Printf("Failed to update blog - %v", err)
@@ -428,26 +414,25 @@ func (db *DBClient) UpdateBlog(collectionName string, blog models.Blog) error {
 	return nil
 }
 
-
-func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, collectionName string, blogId string) (*models.Blog,error) {
+func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, collectionName string, blogId string) (*models.Blog, error) {
 
 	collection := db.GetCollection(collectionName)
 
-	var blog models.Blog;
+	var blog models.Blog
 
-	filter := bson.M{"blog_id":blogId}
+	filter := bson.M{"blog_id": blogId}
 	err := collection.FindOne(ctx, filter).Decode(&blog)
 
-	if err != nil{ 
-		if err == mongo.ErrNoDocuments{
-			log.Printf("Blog with %s does not exist in mongo.",blogId)
-			return nil,err;
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Printf("Blog with %s does not exist in mongo.", blogId)
+			return nil, err
 		}
-		log.Println("Failed to find specific blog : ",err.Error())
-		return nil,err;
+		log.Println("Failed to find specific blog : ", err.Error())
+		return nil, err
 	}
 
-	return &blog,nil;
+	return &blog, nil
 }
 
 func (db *DBClient) DeleteAllBlogs(collectionName string) error {
@@ -471,42 +456,105 @@ func (db *DBClient) DeleteAllBlogs(collectionName string) error {
 	return nil
 }
 
-func (db *DBClient) DeleteBlogbyId(collectionName string, blogId string) error {
+func (db *DBClient) SoftDeleteBlogbyId(collectionName string, blogId string) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 
 	defer cancel()
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
 	filter := bson.M{"blog_id": blogId}
-	result, err := collection.DeleteOne(ctx, filter)
+	updateBody := bson.M{
+		"$set": bson.M{
+			"is_delete": true,
+		},
+	}
+
+	var upsert bool = true
+	option := options.UpdateOptions{
+		Upsert: &upsert,
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, updateBody, &option)
+
 	if err != nil {
 		log.Printf("Could not delete blog(DeleteBlogbyId): %v", err)
 		return fmt.Errorf("could not delete blog: %v", err)
 
 	}
 
-	if result.DeletedCount == 0 {
+	if result.MatchedCount == 0 {
 		return fmt.Errorf("no blog found with ID : %s", blogId)
 	}
 
 	return nil
 }
 
+// **********************************************************************
+// ***********************************************************************
 func (db *DBClient) DeleteAllRelations(collectionName string) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second)
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 
-	defer cancel();
+	defer cancel()
 	collection := db.GetCollection(collectionName)
-	
-	filter := bson.M{}// delete all records.
-	result, err := collection.DeleteMany(ctx,filter)
+
+	filter := bson.M{} // delete all records.
+	result, err := collection.DeleteMany(ctx, filter)
 
 	if err != nil {
-		log.Fatalf("Could not delete all relations - %v",err)
-		return err;
+		log.Fatalf("Could not delete all relations - %v", err)
+		return err
 	}
-	log.Println("Deleted relations - ",result.DeletedCount)
-	
-	return nil;
+	log.Println("Deleted relations - ", result.DeletedCount)
 
+	return nil
+
+}
+
+// relation handlers
+func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
+
+	collection := db.GetCollection(collectionName)
+	resultChan := make(chan *mongo.InsertOneResult)
+	errChan := make(chan error)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		var blogToTag relations.R_Tag_Blog
+		blogToTag.Blog_id = blog.Blog_id
+		blogToTag.Tag_id = blog.Tag_id
+
+		// checking for blog-relation-tag persistence
+		result, err := collection.InsertOne(ctx, blogToTag)
+		if err != nil {
+			log.Println("Could not save blog in mongo-db (Second) !")
+			errChan <- err
+			return
+		}
+
+		resultChan <- result
+	}()
+
+	// close channels
+	go func() {
+		wg.Wait()
+		close(resultChan)
+		close(errChan)
+	}()
+
+	select {
+	case result := <-resultChan:
+		return result, nil
+
+	case err := <-errChan:
+		return nil, err
+
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }

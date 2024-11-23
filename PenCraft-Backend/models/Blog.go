@@ -11,7 +11,7 @@ type Blog struct {
 	Title      string             `json:"title" bson:"title" validate:"required"`
 	Excerpt    string             `json:"excerpt" bson:"excerpt" validate:"required"`
 	Tag_id     string             `json:"tag_id" bson:"tag_id"`
-	Is_deleted bool               `json:"is_deleted" bson:"is_deleted"`
+	Is_delete  bool               `json:"is_delete" bson:"is_delete"`
 	User_id    string             `json:"user_id" bson:"user_id"`
 	Created_at time.Time          `json:"created_at" bson:"created_at"`
 	Updated_at time.Time          `json:"updated_at" bson:"updated_at"`

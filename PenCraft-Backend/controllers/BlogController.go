@@ -51,6 +51,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 
 	blogModel.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	blogModel.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	blogModel.Is_delete = false
 
 	blogModel.ID = primitive.NewObjectID()
 	blogModel.Blog_id = blogModel.ID.Hex()
@@ -290,7 +291,6 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 		blog.Title = requestPayload.Title
 	}
 
-	blog.Is_deleted = requestPayload.Is_deleted
 
 	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
@@ -399,7 +399,7 @@ func DeleteAllDataController(w http.ResponseWriter, r *http.Request) {
 
 
 // Delete specific Blog (DELETE)
-func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
+func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodDelete {
 		utils.GetErrorResponse(w, http.StatusBadRequest, "Supposed to be DELETE !")
@@ -426,9 +426,13 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 		return;
 	}
 
+	var updatedblog models.Blog = *blog;
+	updatedblog.Is_delete = true;
+
 	var tempList []models.Blog
 	tempList = append(tempList, *blog)
 	err  = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION,tempList)
+
 
 	if err != nil{
 		log.Println("HardDeleteBlogByBlogidController-> redisDb.DeleteDatafromRedisHashset()")
@@ -437,8 +441,18 @@ func HardDeleteBlogbyBlogidController(w http.ResponseWriter, r *http.Request) {
 		return;
 	}
 
+	tempList = []models.Blog{}
+	tempList = append(tempList, updatedblog)
+	err = redisDb.SaveAllBlogtoRedis(ctx, tempList)
+
+	if err !=nil{
+		log.Println("Could not save blog back to redis by id (SoftDeleteBlogbyidController)")
+		http.Error(w, err.Error(), http.StatusInternalServerError);
+		return;
+	}
+
 	// remove data from secondary memory mongoDB.
-	err = mongoDb.DeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
+	err = mongoDb.SoftDeleteBlogbyId(utils.BLOG_COLLECTION, blog_id)
 	if err != nil {
 		log.Println("HardDeleteBlogByBlogidController->DeleteBlogbyId()")
 		log.Println("failed to delete blog by blogid from mongodb")
