@@ -15,4 +15,5 @@ type User struct {
 	Profile_image *string            `json:"profile_image,omitempty" bson:"profile_image,omitempty"`
 	Created_at    time.Time          `json:"created_at" bson:"created_at"`
 	Updated_at    time.Time          `json:"updated_at" bson:"updated_at"`
+	Total_blogs   *int				 `json:"total_blogs" bson:"total_blogs"`
 }

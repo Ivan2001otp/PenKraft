@@ -10,7 +10,13 @@ import img3 from "../assets/chronicles.jpeg";
 import img4 from "../assets/magicimg.jpg";
 import img5 from "../assets/ragnarok.jpg";
 import img6 from "../assets/treeimg.jpg";
-import img7 from "../assets/cube.jpg";
+import img14 from "../assets/sekiero.jpg";
+import img8 from "../assets/blackops.jpg";
+import img9 from "../assets/spidy1.jpg";
+import img10 from "../assets/spidy2.jpg";
+import img11 from "../assets/ww3.jpg";
+import img12 from "../assets/cod.jpg";
+import img13 from "../assets/wukong.jpg";
 
 const HeroImg = () => {
   const slides = [
@@ -34,7 +40,25 @@ const HeroImg = () => {
       url: img6,
     },
     {
-      url: img7,
+      url: img14,
+    },
+    {
+      url: img8,
+    },
+    {
+      url: img9,
+    },
+    {
+      url: img10,
+    },
+    {
+      url: img11,
+    },
+    {
+      url: img12,
+    },
+    {
+      url: img13,
     },
   ];
 
@@ -44,13 +68,15 @@ const HeroImg = () => {
     // const isFirstSlide = currentIndex === 0;
     // const newIndex = isFirstSlide ? slides.length - 1 : currentIndex - 1;
 
-    setCurrentIndex((prevIndex)=>(prevIndex-1 + slides.length)%slides.length);
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + slides.length) % slides.length
+    );
   };
 
   const nextSlide = () => {
     // const isLastSlide = currentIndex === slides.length - 1;
     // const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex((prevIndex) => (prevIndex+1) % slides.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
   };
 
   const goToSelectedSlide = (slideIndex) => {
@@ -58,17 +84,17 @@ const HeroImg = () => {
     setCurrentIndex(slideIndex);
   };
 
-  useEffect(()=>{
-    const interval = setInterval(()=>{
+  useEffect(() => {
+    const interval = setInterval(() => {
       nextSlide();
-    },3000);
+    }, 5000);
 
-    return ()=>clearInterval(interval);
-  },[]);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="max-w-[1540px] h-[790px] m-auto md:-mt-14  -z-100 group ">
-        {/* <div 
+      {/* <div 
          
         className="transition-transform duration-500 flex">
           <img
@@ -77,9 +103,9 @@ const HeroImg = () => {
             className="flex w-full md:h-fit"
           />
         </div> */}
-        <div
+      <div
         style={{ backgroundImage: `url(${slides[currentIndex].url})` }}
-        className='max-w-full h-[180px] md:h-full flex bg-center bg-cover md:bg-contain duration-500'
+        className="max-w-full h-[180px] md:h-full flex bg-center bg-cover duration-500"
       ></div>
 
       {/* left arrow */}
@@ -102,7 +128,7 @@ const HeroImg = () => {
             className="text-xl cursor-pointer"
             onClick={() => goToSelectedSlide(index)}
           >
-            <RxDotFilled/>
+            <RxDotFilled />
           </div>
         ))}
       </div>
