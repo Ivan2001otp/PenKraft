@@ -96,14 +96,15 @@ const HeroImg = () => {
         }}
         className="bg-center bg-cover duration-500 w-full h-[16rem] md:h-[760px]"
       >
-        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular tracking-wide opacity-60 hover:opacity-100 duration-300  text-3xl md:text-5xl lg:text-6xl lg:mt-[38%]">
+        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular tracking-wide duration-300  text-3xl md:text-5xl lg:text-6xl lg:mt-[38%]">
           From Gaming to{" "}
           <span className="bokor-regular hover:text-8xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-orange-500 to-red-800 bg-clip-text">
             Blogging
           </span>
         </h1>
 
-        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular text-3xl sm:text-5xl lg:text-6xl text-left tracking-wide opacity-60 hover:opacity-100 duration-300">
+        
+        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular text-3xl sm:text-5xl lg:text-6xl text-left tracking-wide duration-300">
           your{" "}
           <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
             Game

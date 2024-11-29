@@ -23,3 +23,50 @@
     font-family: "Edu", sans-serif;
     color-scheme: dark;
 }
+
+@layer utilities {
+    /* Custom underline effect */
+    .underline-effect {
+      position: relative;
+      display: inline-block;
+    }
+  
+    .underline-effect::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 4px; /* Thickness of the underline */
+      background-color: #6934dc; /* Underline color */
+      transition: width 0.3s ease; /* Transition effect for underline */
+    }
+  
+    .underline-effect:hover::after {
+      width: 100%; /* Full width when hovered */
+    }
+
+
+
+    /*This is custom underline for app logo*/
+    .logo-underline {
+        position: relative;
+        display: inline-block;
+      }
+    
+      .logo-underline::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 3px; /* Thickness of the underline */
+        background-color: var(--underline-color, #3490dc); /* Underline color */
+        transition: width 0.3s ease; /* Transition effect for underline */
+      }
+    
+      .logo-underline:hover::after {
+        width: 100%; /* Full width when hovered */
+      }
+  }
+  

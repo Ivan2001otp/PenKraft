@@ -30,13 +30,14 @@ const Navbar = () => {
               src={penkraft}
               alt="logo"
             />
-            <span className="logo-font text-2xl tracking-light">PenKraft</span>
+            <span style={{"--underline-color":'#f3815f'}} className="logo-font text-2xl tracking-light logo-underline">PenKraft</span>
           </div>
 
           <ul className="hidden lg:flex space-x-10 items-center">
             {navItems.map((item, index) => (
               <li
-                className="logo-font  hover:text-yellow-500 transition duration-400"
+                style={{"--underline-color":"#f3efec"}}
+                className="logo-font logo-underline  hover:text-yellow-500 transition duration-400"
                 key={index}
               >
                 {item.label === "Social-Media" ? (
