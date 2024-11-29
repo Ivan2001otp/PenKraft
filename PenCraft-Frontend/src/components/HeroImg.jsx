@@ -88,7 +88,7 @@ const HeroImg = () => {
   }, []);
 
   return (
-    <div className="flex flex-col mt-8 md:mt-0 lg:mt-0">
+    <div className="flex flex-col mt-8 md:mt-0 lg:mt-0 border-b-4">
       <div
         style={{
           backgroundImage: `url(${slides[currentIndex].url})`,
