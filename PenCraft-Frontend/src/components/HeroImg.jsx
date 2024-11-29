@@ -87,17 +87,55 @@ const HeroImg = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return (//md:relative -z-10 md:max-w-[1540px] h-[790px] m-auto md:-mt-14 
-    <div className="flex flex-col mt-10 md:mt-0 lg:mt-0">
-
+  return (
+    <div className="flex flex-col mt-8 md:mt-0 lg:mt-0">
       <div
-        style={{ backgroundImage: `url(${slides[currentIndex].url})`, marginTop:`-8rem` }}
+        style={{
+          backgroundImage: `url(${slides[currentIndex].url})`,
+          marginTop: `-8rem`,
+        }}
         className="bg-center bg-cover duration-500 w-full h-[16rem] md:h-[760px]"
       >
+        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular tracking-wide opacity-60 hover:opacity-100 duration-300  text-3xl md:text-5xl lg:text-6xl lg:mt-[38%]">
+          From Gaming to{" "}
+          <span className="bokor-regular hover:text-8xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-orange-500 to-red-800 bg-clip-text">
+            Blogging
+          </span>
+        </h1>
+
+        <h1 className="hidden md:block lg:ml-8 w-fit bokor-regular text-3xl sm:text-5xl lg:text-6xl text-left tracking-wide opacity-60 hover:opacity-100 duration-300">
+          your{" "}
+          <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
+            Game
+          </span>{" "}
+          ,your{" "}
+          <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-red-500 to-orange-400 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
+            Story
+          </span>
+        </h1>
+
+        <div className="w-full bg-gradient-to-t from-neutral-900 via-neutral-800 to-transparent"></div>
       </div>
 
-     
-  
+      <div className="mt-4 mx-auto md:hidden">
+        <h1 className="bokor-regular text-3xl text-left tracking-wide opacity-60 ">
+          From Gaming to{" "}
+          <span className="bokor-regular bg-gradient-to-r from-orange-500 to-red-800 bg-clip-text">
+            Blogging
+          </span>
+        </h1>
+
+        <h1 className="bokor-regular text-3xl text-left tracking-wide opacity-60 ">
+          your{" "}
+          <span className="bokor-regular hover:text-7xl text-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text">
+            Game
+          </span>{" "}
+          ,your{" "}
+          <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-red-500 to-orange-400 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
+            Story
+          </span>
+        </h1>
+      </div>
 
       {/* <div className="flex justify-center md:-mt-[8rem]">
         <img className="bg-center bg-cover duration-500 justify-center "  src={slides[currentIndex].url}/>
