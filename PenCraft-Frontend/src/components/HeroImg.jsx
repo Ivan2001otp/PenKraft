@@ -115,7 +115,6 @@ const HeroImg = () => {
           </span>
         </h1>
 
-        <div className="w-full bg-gradient-to-t from-neutral-900 via-neutral-800 to-transparent"></div>
       </div>
 
       <div className="mt-4 mb-4 mx-auto md:hidden">

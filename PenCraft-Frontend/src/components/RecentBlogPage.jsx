@@ -18,48 +18,48 @@ const RecentBlogPage = () => {
       date: "03.08.2021",
       description: "Progressively incentivize cooperative systems through technically sound functionalities. Credibly productivate seamless data with flexible schemas.",
       image:
-        "https://images.unsplash.com/photo-1731963914155-d22942204d3d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwzNXx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1732046827794-ac0d6c915a4a?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       title: "Post 2 Title",
       date: "2023-11-22",
       description: "This is a description for post 2.",
       image:
-        "https://images.unsplash.com/photo-1732719632991-6ec4cdb32dfb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1489386659872-204f4f861691?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE4fEZ6bzN6dU9ITjZ3fHxlbnwwfHx8fHw%3D",
     },
     {
       title: "Post 3 Title",
       date: "2023-11-22",
       description: "This is a description for post 1.",
       image:
-        "https://images.unsplash.com/photo-1732719632991-6ec4cdb32dfb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1732861448032-fc1b14365bff?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDd8NnNNVmpUTFNrZVF8fGVufDB8fHx8fA%3D%3D",
     },
     {
       title: "Post 4 Title",
       date: "2023-11-22",
       description: "This is a description for post 1.",
       image:
-        "https://images.unsplash.com/photo-1732719632991-6ec4cdb32dfb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1730357753597-ee11ed5a2c0c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDI5fENEd3V3WEpBYkV3fHxlbnwwfHx8fHw%3D",
     },
     {
       title: "Post 5 Title",
       date: "2023-11-22",
       description: "This is a description for post 1.",
       image:
-        "https://images.unsplash.com/photo-1732719632991-6ec4cdb32dfb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1732046827794-ac0d6c915a4a?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     },
     {
       title: "Post 6 Title",
       date: "2023-11-22",
       description: "This is a description for post 1.",
       image:
-        "https://images.unsplash.com/photo-1732719632991-6ec4cdb32dfb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D",
+        "https://images.unsplash.com/photo-1732565432442-1d67155a5c84?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDExfHhqUFI0aGxrQkdBfHxlbnwwfHx8fHw%3D",
     },
     // ... more posts
   ];
 
   return (
-    <div className="p-2 mt-12 mx-6 h-[650px]">
+    <div className="p-2 mt-12 mx-6 h-fit ">
       <div className="text-xl logo-font md:text-3xl">Recent Game Blogs</div>
       <div className="flex flex-col">
         <Router>
@@ -89,6 +89,7 @@ const RecentBlogPage = () => {
         </Router>
       </div>
       {/* <RecentPosts posts={postsData} /> */}
+   
     </div>
   );
 };
