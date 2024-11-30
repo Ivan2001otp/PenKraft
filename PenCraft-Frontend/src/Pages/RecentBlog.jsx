@@ -1,13 +1,22 @@
 // RecentPost.js
-import React from 'react';
+import React from "react";
 
 const RecentPost = ({ title, date, description, image }) => {
   return (
-    <div className="bg-neutral-700 shadow-md rounded-lg transition duration-300 ease-in-out hover:border-orange-500 hover:border-2 hover:bg-gradient-to-t hover:from-neutral-700 hover:via-emerald-500 hover:to-transparent-800 cursor-pointer mb-4">
-      <img src={image} alt={title} className="w-full h-80 object-cover rounded-t-lg mb-4" />
-      <h3 className="text-lg font-bold mb-2">{title}</h3>
+    <div className=" shadow-md rounded-lg transition duration-500 ease-in-out cursor-pointer mb-4">
+      <img
+        src={image}
+        alt={title}
+        className="w-full h-[280px] rounded-md border border-slate-400 object-cover rounded-t-lg mb-4"
+      />
+      <div className="-mt-12 mb-4  bg-green-600 absolute px-4 py-1 bg-opacity-80 rounded-r-xl z-10 ">
+        {" "}
+        Technology
+      </div>
       <p className="text-white-600 text-sm">{date}</p>
-      <p className="text-gray-700">{description}</p>
+      <h3 className="text-lg font-bold mb-2">{title}</h3>
+
+      <p className="text-left text-slate-200">{description}</p>
     </div>
   );
 };

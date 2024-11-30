@@ -118,7 +118,7 @@ const HeroImg = () => {
         <div className="w-full bg-gradient-to-t from-neutral-900 via-neutral-800 to-transparent"></div>
       </div>
 
-      <div className="mt-4 mx-auto md:hidden">
+      <div className="mt-4 mb-4 mx-auto md:hidden">
         <h1 className="bokor-regular text-3xl text-left tracking-wide opacity-60 ">
           From Gaming to{" "}
           <span className="bokor-regular bg-gradient-to-r from-orange-500 to-red-800 bg-clip-text">
@@ -138,30 +138,7 @@ const HeroImg = () => {
         </h1>
       </div>
 
-      {/* <div className="flex justify-center md:-mt-[8rem]">
-        <img className="bg-center bg-cover duration-500 justify-center "  src={slides[currentIndex].url}/>
-      </div> */}
-
-      {/* <div className="hidden md:block translate-y-[-100%] w-full h-[300px] bg-gradient-to-t from-neutral-950 to-transparent border-b-2"></div> */}
-
-      {/* <div className="translate-x-8  absolute mt-2 flex flex-col items-center text-center lg:bottom-[10%]">
-        <h1 className="mb-4 bokor-regular text-3xl sm:text-5xl lg:text-6xl text-left tracking-wide opacity-60 hover:opacity-100 duration-300">
-          From Gaming to{" "}
-          <span className="bokor-regular hover:text-8xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-blue-700 to-red-800 bg-clip-text hover:underline hover:underline-offset-4 hover:decoration-indigo-200">
-            Blogging
-          </span>
-        </h1>
-        <h1 className="bokor-regular text-3xl sm:text-5xl lg:text-6xl text-left tracking-wide opacity-60 hover:opacity-100 duration-300">
-          your{" "}
-          <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-yellow-500 to-orange-600 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
-            Game
-          </span>{" "}
-          ,your{" "}
-          <span className="bokor-regular hover:text-7xl transistion-all duration-300 ease-in-out text-transparent bg-gradient-to-r from-red-500 to-orange-400 bg-clip-text  hover:underline hover:underline-offset-4 hover:decoration-slate-500">
-            Story
-          </span>
-        </h1>
-      </div> */}
+      
     </div>
   );
 };
