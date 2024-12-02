@@ -1,18 +1,8 @@
-import React from "react";
-import RecentPosts from "../Pages/RecentBlogs";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  useNavigate,
-  Outlet,
-} from "react-router-dom";
+import React from 'react'
+import RecentPost from '../../Pages/RecentBlog'
+import RecentPosts from '../../Pages/RecentBlogs';
 
-import TabBar from "./TabBar";
-
-const RecentBlogPage = () => {
-  const postsData = [
+const postData = [
     {
       title: "Dream destinations to visit this year in Paris",
       date: "03.08.2021",
@@ -57,43 +47,13 @@ const RecentBlogPage = () => {
     },
     // ... more posts
   ];
-
+const FPS = () => {
   return (
-    <div className="p-2 mt-12 mx-6 h-fit ">
-      <div className="text-xl logo-font md:text-3xl">Recent Game Blogs</div>
-      <div className="flex flex-col">
-        <TabBar/>
-        {/* <Router>
-          <div>
-            <TabBar />
-            <Routes>
-              <Route path="/" 
-              element={<RecentPosts posts={postsData} />} />
+    <div className="p-6 rounded-lg">
+    <h2 className="text-2xl font-semibold">FPS Section</h2>
+    <RecentPosts posts={postData}/>
+  </div>
+  )
+}
 
-              <Route path="/News" 
-              element={<RecentPosts posts={postsData} />} />
-
-              <Route
-                path="/Technology"
-                element={<RecentPosts posts={postsData} />}
-              />
-
-              <Route
-                path="/Cartoon"
-                element={<RecentPosts posts={postsData} />}
-              />
-
-              <Route
-                path="/Gaming"
-                element={<RecentPosts posts={postsData} />}
-              />
-            </Routes>
-          </div>
-        </Router> */}
-      </div>
-   
-    </div>
-  );
-};
-
-export default RecentBlogPage;
+export default FPS
