@@ -1,10 +1,13 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
+	"sync"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type MongoDBConfig struct {
@@ -12,6 +15,33 @@ type MongoDBConfig struct {
 	DatabaseName string
 	ConnectionTimeout time.Duration
 	PoolSize uint64
+}
+
+// this is the changestream provider that manages stream for a given collection.
+type ChangeStreamManager struct {
+	client *mongo.Client
+	collection *mongo.Collection
+	changeStream *mongo.ChangeStream
+	streamCtx  context.Context
+	exCancelFunc context.CancelFunc
+	once sync.Once
+	mu	sync.Mutex
+}
+
+// creates and return the singleton object of ChangeStreamManager.
+func NewChangeStreamManager( client *mongo.Client,collection string) *ChangeStreamManager {
+	envFile := make(map[string]string)
+	envFile = *ReadEnvFile()
+
+	databaseName := envFile["DATABASE_NAME"];
+	if databaseName=="" {
+		databaseName = "PENKRAFT"
+	}
+
+	return &ChangeStreamManager{
+		client: client,
+		collection: client.Database(databaseName).Collection(collection),
+	}
 }
 
 

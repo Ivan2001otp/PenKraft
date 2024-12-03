@@ -60,7 +60,7 @@ const RecentBlogPage = () => {
 
   return (
     <div className="p-2 mt-12 mx-6 h-fit ">
-      <div className="text-xl logo-font md:text-3xl">Recent Game Blogs</div>
+      <div className="text-xl logo-font md:text-3xl underline-effect">Recent Game Blogs</div>
       <div className="flex flex-col">
         <TabBar/>
         {/* <Router>

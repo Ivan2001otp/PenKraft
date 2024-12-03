@@ -4,8 +4,7 @@ import (
 	"time"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type Tag struct {
+ type Tag struct {
 	ID primitive.ObjectID `bson:"_id"`
 	Tag_id string `json:"tag_id" bson:"tag_id"`
 	Tag_name string `json:"tag_name" bson:"tag_name" validation:"required"`

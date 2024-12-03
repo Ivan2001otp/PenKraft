@@ -7,10 +7,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sync"
 	"time"
-	"go.mongodb.org/mongo-driver/bson"
 	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -25,6 +25,78 @@ var (
 	instance *DBClient
 	once     sync.Once
 )
+
+// **********************************
+// mongodb ChangeStream operations
+// **********************************
+
+// GetMongoDbObserver ensures there exists a single active change-stream per collection. 
+func (observer *ChangeStreamManager) GetMongoDbObserver() (*mongo.ChangeStream, error) {
+	observer.mu.Lock()
+	defer observer.mu.Unlock()
+
+	observer.once.Do(func() {
+		//setting up context with cancellation
+		observer.streamCtx, observer.exCancelFunc = context.WithCancel(context.Background())
+
+		// start watching the collection
+		changeStream, err := observer.collection.Watch(observer.streamCtx, mongo.Pipeline{})
+		if err != nil {
+			log.Printf("Error starting change stream : %v", err)
+			return
+		}
+
+		observer.changeStream = changeStream
+		log.Println("ChangeStream started for collection %s", observer.collection.Name())
+	})
+
+	if observer.changeStream == nil {
+		return nil, fmt.Errorf("change stream initialization faild for collection %s", observer.collection.Name())
+	}
+
+	return observer.changeStream, nil
+}
+
+// CLoseMongoDbObserver closes the given single active changestream
+func (observer *ChangeStreamManager) CloseMongoDbObserver() error {
+	observer.mu.Lock()
+	defer observer.mu.Unlock();
+
+	if observer.changeStream != nil {
+		err := observer.changeStream.Close(observer.streamCtx)
+
+		if err != nil {
+			log.Printf("Error occured while closing the change-Stream : %v", err)
+			return err;
+		}
+		log.Printf("ChangeStream closed for collection %s",observer.collection.Name())
+	}
+
+
+	// reset the changeStream attributes
+	observer.changeStream = nil;
+	observer.once = sync.Once{}
+	if observer.exCancelFunc != nil {
+		observer.exCancelFunc()
+	}
+
+	return nil;
+}
+
+
+func (observer *ChangeStreamManager) MonitorChanges() {
+	changeStream, err := observer.GetMongoDbObserver();
+
+	if err != nil {
+		log.Fatal("Failed to get ChangeStream.",err)
+		return;
+	}
+
+	// Process the onchange events to feed the data to Elastic via kafka
+}
+
+//************************************************************************************
+//************************************************************************************
 
 func GetMongoDBClient() *DBClient {
 	once.Do(func() {
@@ -137,7 +209,7 @@ func (db *DBClient) SoftDeleteTagbyId(ctx context.Context, tagId string) error {
 }
 
 // tag handlers
-func (db *DBClient) SaveTagOnly(ctx context.Context,tag models.Tag) (interface{}, error) {
+func (db *DBClient) SaveTagOnly(ctx context.Context, tag models.Tag) (interface{}, error) {
 
 	collection := db.GetCollection(utils.ALL_TAG)
 	resultChan := make(chan *mongo.InsertOneResult)
@@ -265,8 +337,8 @@ BLOG OPERATIONS
 
 // Blog handlers
 func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
-	defer cancel();
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
 
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
@@ -310,7 +382,7 @@ func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
 	}
 }
 
-func (db *DBClient) FetchAllBlogs(ctx context.Context,) ([]models.Blog, error) {
+func (db *DBClient) FetchAllBlogs(ctx context.Context) ([]models.Blog, error) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.D{}}}
 
@@ -364,7 +436,7 @@ func (db *DBClient) FetchAllBlogs(ctx context.Context,) ([]models.Blog, error) {
 	return listOfBlog, nil
 }
 
-func (db *DBClient) UpdateBlog(ctx context.Context,blog models.Blog) error {
+func (db *DBClient) UpdateBlog(ctx context.Context, blog models.Blog) error {
 
 	updatedBody := bson.M{
 		"$set": bson.M{
@@ -440,7 +512,7 @@ func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
 	return nil
 }
 
-func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context,blogId string) error {
+func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context, blogId string) error {
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
 	filter := bson.M{"blog_id": blogId}
@@ -473,8 +545,8 @@ func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context,blogId string) error 
 // **********************************************************************
 // ***********************************************************************
 func (db *DBClient) DeleteAllRelations(collectionName string) error {
-	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
-	defer cancel();
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
 	collection := db.GetCollection(collectionName)
 
 	filter := bson.M{} // delete all records.
@@ -491,8 +563,8 @@ func (db *DBClient) DeleteAllRelations(collectionName string) error {
 
 // relation handlers
 func (db *DBClient) SaveRelation(collectionName string, blog relations.R_Tag_Blog) (interface{}, error) {
-var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
-	defer cancel();
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	defer cancel()
 	collection := db.GetCollection(collectionName)
 	resultChan := make(chan *mongo.InsertOneResult)
 	errChan := make(chan error)
