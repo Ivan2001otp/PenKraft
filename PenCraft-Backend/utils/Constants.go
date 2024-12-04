@@ -13,3 +13,6 @@ var BLOG_R_TAG string = "Blog_R_Tag"
 
 // redis key names
 // var REDIS_BLOG_COLLECTION = "Blogs"
+
+var KAFKA_TOPIC = "mongo-to-elastic-changes"
+var KAFKA_BROKER = "localhost:9092";
