@@ -9,6 +9,11 @@ import (
 func Router() *mux.Router {
 	router := mux.NewRouter()
 
+	//***********************End points for Search*************************
+	router.Handle("/api/v1/search",service.RateLimiter(controller.SearchHandler)).Methods("GET")
+
+
+
 	//******************End points for BLOG Crud***************************
 	router.Handle("/api/v1/blog", service.RateLimiter(controller.CreateBlogController)).Methods("POST")
 

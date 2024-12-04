@@ -3,6 +3,7 @@ package main
 import (
 	redisDb "PencraftB/repository"
 	mongoDb "PencraftB/repository"
+	elasticDb "PencraftB/repository"
 	routers  "PencraftB/Routes"
 	"net/http"
 	"log"
@@ -13,8 +14,14 @@ func main(){
 
 	client := mongoDb.GetMongoDBClient()
 	rdb := redisDb.GetRedisInstance()
+	_ = elasticDb.GetElasticsearchClient() 
+
 
 	log.Println("Starting server on :8080")
+	log.Println("MongoDB is alive !")
+	log.Println("redisDB is alive !")
+	log.Println("elasticDB is alive !")
+
 
 	defer client.Close();
 	defer rdb.Close();

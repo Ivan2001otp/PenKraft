@@ -1,16 +1,21 @@
 package repository
 
 import (
+	"PencraftB/config"
 	"PencraftB/models"
 	relations "PencraftB/models/Relations"
 	"PencraftB/utils"
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/IBM/sarama"
+	"go.mongodb.org/mongo-driver/bson"
+
 	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -85,7 +90,7 @@ func (observer *ChangeStreamManager) CloseMongoDbObserver() error {
 
 
 func (observer *ChangeStreamManager) MonitorChanges() {
-	changeStream, err := observer.GetMongoDbObserver();
+	watchStream, err := observer.GetMongoDbObserver();
 
 	if err != nil {
 		log.Fatal("Failed to get ChangeStream.",err)
@@ -93,6 +98,42 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 	}
 
 	// Process the onchange events to feed the data to Elastic via kafka
+	defer watchStream.Close(context.Background())
+	brokerList := []string{"localhost:9092"}
+	kafkaProducer := config.GetKafkaProducer(brokerList)
+
+	for watchStream.Next(context.Background()) {
+		var event bson.M;
+		if err := watchStream.Decode(&event); err != nil {
+			log.Println("Error decoding event : %v" ,err);
+			continue;
+		}
+
+		
+		// serialize the event to json,in order to send Kafka
+		
+		message,err := json.Marshal(event)
+		if err != nil {
+			log.Println("(monmgo_client.go -> MonitorChanges)Marshalling Failed");
+			continue;
+		}
+
+		msg:= &sarama.ProducerMessage{
+			Topic: utils.KAFKA_TOPIC,
+			Value: sarama.StringEncoder(message),
+		}
+
+		_,_,err = kafkaProducer.SendMessage(msg)
+
+		if err != nil {
+			log.Println("Error sending message to Kafka : ",err)
+		} else {
+			log.Println("Message sent successfully !")
+		}
+
+	}
+
+	log.Println("Stopped watching changes.")
 }
 
 //************************************************************************************
