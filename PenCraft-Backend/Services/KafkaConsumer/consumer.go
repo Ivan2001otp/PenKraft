@@ -10,8 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 	"github.com/IBM/sarama"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v7"
+  "github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 var kafkaBroker  = Util.KAFKA_BROKER //broker address
