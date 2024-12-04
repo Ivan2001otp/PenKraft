@@ -16,3 +16,4 @@ var BLOG_R_TAG string = "Blog_R_Tag"
 
 var KAFKA_TOPIC = "mongo-to-elastic-changes"
 var KAFKA_BROKER = "localhost:9092";
+var ELASTIC_INDEX_NAME = "mongo-events"

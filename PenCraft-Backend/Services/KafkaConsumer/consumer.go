@@ -15,14 +15,14 @@ import (
 )
 
 var kafkaBroker  = Util.KAFKA_BROKER //broker address
-var kafkaTopi = Util.KAFKA_TOPIC //kafka topic to consume mongochanges
+var kafkaTopic = Util.KAFKA_TOPIC //kafka topic to consume mongochanges
 var esClient *elasticsearch.Client
 
 // initialize elasticsearch client
 func init() {
-	
-	esClient, err := elasticsearch.NewClient(elasticsearch.Config{
-		Address: []string{"http://"+Util.KAFKA_BROKER},
+	var err error;
+	esClient, err = elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{"http://"+Util.KAFKA_BROKER},
 	})
 
 	if err != nil {
@@ -43,8 +43,8 @@ func ProcessEventToElasticSearch(event map[string]interface{}) {
 
 	// index the document
 	req := esapi.IndexRequest{
-		Index: "mongo-events",
-		DocumentID: "",
+		Index: Util.ELASTIC_INDEX_NAME,
+		DocumentID: "",//autogenerate by elastic search.
 		Body: bytes.NewReader(eventData),
 		Refresh: "true",
 	}
