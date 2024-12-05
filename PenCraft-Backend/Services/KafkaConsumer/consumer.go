@@ -2,21 +2,28 @@ package main
 
 import (
 	Util "PencraftB/utils"
+	"PencraftB/config"
 	"bytes"
 	"context"
 	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+
 	"github.com/IBM/sarama"
 	"github.com/elastic/go-elasticsearch/v7"
-  "github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 var kafkaBroker  = Util.KAFKA_BROKER //broker address
 var kafkaTopic = Util.KAFKA_TOPIC //kafka topic to consume mongochanges
-var esClient *elasticsearch.Client
+var (
+	esClient *elasticsearch.Client
+	consumerConfigObj *sarama.Config
+	consumerConfigOnce sync.Once
+)
 
 // initialize elasticsearch client
 func init() {
@@ -64,13 +71,14 @@ func ProcessEventToElasticSearch(event map[string]interface{}) {
 	} else {
 		log.Printf("Event indexed to elasticsearch successfully")
 	}
-
 }
 
 
 func ConsumeKafkaMessages() {
+
 	// kafka consumer setup
-	consumer, err := sarama.NewConsumer([] string{Util.KAFKA_BROKER}, nil)
+	config1:= config.FetchConsumerConfig()
+	consumer, err := sarama.NewConsumer([] string{Util.KAFKA_BROKER}, config1)
 	if err != nil {
 		log.Fatalf("Error creating kafka consumer : %v" ,err)
 	}
@@ -113,7 +121,7 @@ func ConsumeKafkaMessages() {
 						continue;
 					}
 
-					ProcessEventToElasticSearch(event)
+					// ProcessEventToElasticSearch(event)
 					
 
 				case <-stopChan:

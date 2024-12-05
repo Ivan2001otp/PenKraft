@@ -47,7 +47,7 @@ func (observer *ChangeStreamManager) GetMongoDbObserver() (*mongo.ChangeStream, 
 		// start watching the collection
 		changeStream, err := observer.collection.Watch(observer.streamCtx, mongo.Pipeline{})
 		if err != nil {
-			log.Printf("Error starting change stream : %v", err)
+			log.Printf("(GetMongoDbObserver)Error starting change stream : %v", err)
 			return
 		}
 
@@ -93,13 +93,17 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 	watchStream, err := observer.GetMongoDbObserver();
 
 	if err != nil {
-		log.Fatal("Failed to get ChangeStream.",err)
+		log.Fatal("(MonitorChanges)Failed to get ChangeStream.",err)
 		return;
 	}
 
 	// Process the onchange events to feed the data to Elastic via kafka
-	defer watchStream.Close(context.Background())
-	brokerList := []string{"localhost:9092"}
+	defer func(){
+		observer.CloseMongoDbObserver();
+		watchStream.Close(context.Background());
+	}()
+
+	brokerList := []string{utils.KAFKA_BROKER}
 	kafkaProducer := config.GetKafkaProducer(brokerList)
 
 	for watchStream.Next(context.Background()) {
@@ -111,7 +115,6 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 
 		
 		// serialize the event to json,in order to send Kafka
-		
 		message,err := json.Marshal(event)
 		if err != nil {
 			log.Println("(monmgo_client.go -> MonitorChanges)Marshalling Failed");
@@ -130,7 +133,6 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 		} else {
 			log.Println("Message sent successfully !")
 		}
-
 	}
 
 	log.Println("Stopped watching changes.")
@@ -379,7 +381,17 @@ BLOG OPERATIONS
 // Blog handlers
 func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	defer cancel()
+	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION)
+
+	go func() {
+		watchStream.MonitorChanges();
+	}()
+
+	defer func(){
+		watchStream.CloseMongoDbObserver()
+		cancel()
+	}()
+
 
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
@@ -491,7 +503,17 @@ func (db *DBClient) UpdateBlog(ctx context.Context, blog models.Blog) error {
 		},
 	}
 
+	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION)
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
+
+	go func(){
+		watchStream.MonitorChanges()
+	}()
+
+	defer func(){
+		watchStream.CloseMongoDbObserver()
+	}()
+	
 	filter := bson.M{"blog_id": blog.Blog_id}
 	var upsert bool = false
 
@@ -509,6 +531,8 @@ func (db *DBClient) UpdateBlog(ctx context.Context, blog models.Blog) error {
 		log.Println("No matched count")
 		return fmt.Errorf("Blog %s does not exist", blog.Blog_id)
 	}
+
+	
 
 	log.Printf("updated %s blog .", blog.Blog_id)
 	return nil
@@ -536,6 +560,14 @@ func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, blogId string) (*mode
 }
 
 func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
+	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION);
+	go func(){
+		watchStream.MonitorChanges()
+	}()
+
+	defer func(){
+		watchStream.CloseMongoDbObserver()
+	}()
 
 	filter := bson.M{} // empty filter matches
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
@@ -555,6 +587,14 @@ func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
 
 func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context, blogId string) error {
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
+	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION);
+	go func(){
+		watchStream.MonitorChanges()
+	}()
+
+	defer func(){
+		watchStream.CloseMongoDbObserver()
+	}()
 
 	filter := bson.M{"blog_id": blogId}
 	updateBody := bson.M{

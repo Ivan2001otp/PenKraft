@@ -16,6 +16,7 @@ func main(){
 	rdb := redisDb.GetRedisInstance()
 	_ = elasticDb.GetElasticsearchClient() 
 
+	
 
 	log.Println("Starting server on :8080")
 	log.Println("MongoDB is alive !")
