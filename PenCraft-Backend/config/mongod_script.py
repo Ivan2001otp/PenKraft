@@ -21,6 +21,18 @@ def create_directories() :
 
 def create_mongo_config_files() :
     print("Creating db configf files...")
+
+
+    if not os.path.exists("mongod1.conf") : 
+        os.makedirs("mongod1.conf", exist_ok=True)
+    if not os.path.exists("mongod2.conf") :
+        os.makedirs("mongod2.conf", exist_ok=True)
+    if not os.path.exists("mongod3.conf") :
+        os.makedirs("mongod3.conf", exist_ok=True)
+
+
+
+
     with open("mongod1.conf","w") as f:
         f.write(f""" 
 net:
