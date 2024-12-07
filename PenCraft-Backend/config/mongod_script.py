@@ -23,16 +23,6 @@ def create_mongo_config_files() :
     print("Creating db configf files...")
 
 
-    if not os.path.exists("mongod1.conf") : 
-        os.makedirs("mongod1.conf", exist_ok=True)
-    if not os.path.exists("mongod2.conf") :
-        os.makedirs("mongod2.conf", exist_ok=True)
-    if not os.path.exists("mongod3.conf") :
-        os.makedirs("mongod3.conf", exist_ok=True)
-
-
-
-
     with open("mongod1.conf","w") as f:
         f.write(f""" 
 net:
@@ -47,7 +37,7 @@ replication:
 """)
         
         #configuration for second instance.(secondary)
-        with open("mongod2.conf","w") as f:
+    with open("mongod2.conf","w") as f:
             f.write(f"""
 net:
   port:{MONGO_PORT2}
@@ -61,7 +51,7 @@ replication:
 """)
             
             #configuring for third instance
-            with open("mongod3.conf") as f:
+    with open("mongod3.conf","w") as f:
                 f.write(f"""
 net:
   port: {MONGO_PORT3}
@@ -77,17 +67,24 @@ replication:
 # start the mongodb instances
 def start_mongo_instances() :
     print("starting mongo db instances")
-
+    # removing --fork flag,because its not supported in windows unlike  macos, unix os.
     #start instance1
-    subprocess.run(["mongod","--config","mongod1.conf","--fork","--logpath",f"{MONGO_LOG_DIR}/log1/mongod1.log"],check=True)
+    p1 = subprocess.Popen(["mongod","--config","mongod1.conf","--logpath",f"{MONGO_LOG_DIR}/log1/mongod1.log"])
+    print("instance1 started!")
 
     #start instance2
-    subprocess.run(["mongod","--config","mongod2.conf","--fork","--logpath",f"{MONGO_LOG_DIR}/log2/mongod2.log"],check=True)
+    p2 = subprocess.Popen(["mongod","--config","mongod2.conf","--logpath",f"{MONGO_LOG_DIR}/log2/mongod2.log"])
+    print("instance2 started!")
 
     #start instance3
-    subprocess.run(["mongod","--config","mongod3.conf","--fork","--logpath",f"{MONGO_LOG_DIR}/log3/mongod3.log"],check=True)
+    p3 = subprocess.Popen(["mongod","--config","mongod3.conf","--logpath",f"{MONGO_LOG_DIR}/log3/mongod3.log"])
+    print("instance3 started!")
 
+    p1.wait()
+    p2.wait()
+    p3.wait()
 
+    print("all 3 replica sets  started successfully !")
 
 def initialize_replica_sets() :
     print("Initializing mongodb replica sets..")
