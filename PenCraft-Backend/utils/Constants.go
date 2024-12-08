@@ -13,6 +13,8 @@ var GET_OPS string = "fetch"
 //elasticsearch const
 var TITLE string = "title";
 var EXCERPT string ="excerpt";
+var ELASTIC_PORT string = "http://localhost:9200"
+var ES_BLOG string = "blog";
 
 
 // collection names

@@ -4,14 +4,14 @@ import (
 	"PencraftB/models"
 	"PencraftB/utils"
 	"bytes"
-	"context"
+	// "context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
 
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
+	// "github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 // singleton for elasticsearch client
@@ -25,7 +25,7 @@ func GetElasticsearchClient() *elasticsearch.Client {
 
 	once1.Do(func() {
 		cfg := elasticsearch.Config{
-			Addresses: []string{"http://" + utils.KAFKA_BROKER},
+			Addresses: []string{utils.ELASTIC_PORT},
 		}
 
 		client, err := elasticsearch.NewClient(cfg)
@@ -53,29 +53,37 @@ func SaveBlogToES(blog models.Blog) {
 		return
 	}
 
-	// indexing(saving) the data
-	req := esapi.IndexRequest{
-		Index:      utils.BLOG_COLLECTION,
-		Body:       bytes.NewReader(blogJson),
-		DocumentID: blog.Blog_id,
-		Refresh:    "true",
-	}
+	
+	res,err := esClient.Index(utils.ES_BLOG,
+					bytes.NewReader(blogJson),
+					esClient.Index.WithDocumentID(blog.Blog_id),
+					esClient.Index.WithRefresh("true"))
 
-	res, err := req.Do(context.Background(), esClient)
+
 	if err != nil {
-		log.Fatalf("Error getting response (SaveBlogToES). %v", err)
+		log.Fatalf("Error (SaveBlogToES). %v", err)
 		return
 	}
 
-	defer res.Body.Close()
-	log.Println("The response on saving to ES : ", res)
-	log.Println("Successfully saved to ES.")
+	if res != nil {
+		defer res.Body.Close()
+		
+		log.Println("The response on saving to ES : ", res)
+		
+		if res.IsError() {
+			log.Println("Error on getting response (SaveBlogToES). ")
+			return
+		}
+		log.Println("Successfully saved to ES.")
+	} else {
+		log.Println("Error: Received a nil response from Elasticsearch.")
+	}
 }
 
 func DeleteBlogToES(blog models.Blog) error {
 	esClient = GetElasticsearchClient()
 
-	res, err := esClient.Delete(utils.BLOG_COLLECTION, blog.Blog_id)
+	res, err := esClient.Delete(utils.ES_BLOG, blog.Blog_id)
 	if err != nil {
 		return fmt.Errorf("error deleting document: %v", err)
 	}
@@ -138,7 +146,7 @@ func searchBlogByTitle(titleField string) *([]models.Blog) {
 	}
 
 	res, err := esClient.Search(
-		esClient.Search.WithIndex(utils.BLOG_COLLECTION),
+		esClient.Search.WithIndex(utils.ES_BLOG),
 		esClient.Search.WithBody(bytes.NewReader(queryJson)),
 		esClient.Search.WithPretty(),
 	)
@@ -204,7 +212,7 @@ func searchBlogByexcerpt(excerpt string) *([]models.Blog) {
 	}
 
 	res, err := esClient.Search(
-		esClient.Search.WithIndex(utils.BLOG_COLLECTION),
+		esClient.Search.WithIndex(utils.ES_BLOG),
 		esClient.Search.WithBody(bytes.NewReader(queryJson)),
 		esClient.Search.WithPretty(),
 	)
@@ -245,7 +253,7 @@ func searchBlogByexcerpt(excerpt string) *([]models.Blog) {
 	return &blogList
 }
 
-func updateBlogToDelete(deletedBlog models.Blog) error {
+func UpdateBlogToDelete(deletedBlog models.Blog) error {
 	esClient = GetElasticsearchClient()
 
 	updateDoc := map[string]interface{}{
@@ -262,7 +270,7 @@ func updateBlogToDelete(deletedBlog models.Blog) error {
 
 
 	res, err := esClient.Update(
-		utils.BLOG_COLLECTION,
+		utils.ES_BLOG,
 		deletedBlog.Blog_id,
 		bytes.NewReader(updatedDocJson),
 		esClient.Update.WithPretty(),
@@ -282,7 +290,7 @@ func updateBlogToDelete(deletedBlog models.Blog) error {
 	return nil;
 }
 
-func fetchAllBlogFromES() ( interface{} ) {
+func FetchAllBlogFromES() ( * []models.Blog ) {
 	var blogList []models.Blog
 
 
@@ -295,23 +303,26 @@ func fetchAllBlogFromES() ( interface{} ) {
 
 	queryJson, err := json.Marshal(query)
 	if err != nil {
-		return fmt.Errorf("Error marshalling query : %s", err)
+		 fmt.Errorf("Error marshalling query : %s", err)
+		 return nil;
 	}
 
 
 	res, err := esClient.Search(
-		esClient.Search.WithIndex(utils.BLOG_COLLECTION),
+		esClient.Search.WithIndex(utils.ES_BLOG),
 		esClient.Search.WithBody(bytes.NewReader(queryJson)),
 		esClient.Search.WithPretty(),
 	)
 	if err != nil {
-		return fmt.Errorf("Error performing search query : %v", err);
+		 fmt.Errorf("Error performing search query : %v", err);
+		 return nil;
 	}
 
 	defer res.Body.Close();
 
 	if res.IsError() {
-		return fmt.Errorf("error response from Elasticsearch: %s", res.String())
+		 fmt.Errorf("error response from Elasticsearch: %s", res.String())
+		 return nil;
 	}
 
 	var result struct {
@@ -322,7 +333,8 @@ func fetchAllBlogFromES() ( interface{} ) {
 		} `json:"hits"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
-		return fmt.Errorf("error parsing response: %s", err)
+		 fmt.Errorf("error parsing response: %s", err)
+		 return nil;
 	}
 
 
@@ -332,4 +344,22 @@ func fetchAllBlogFromES() ( interface{} ) {
 	}
 
 	return &blogList
+}
+
+func PingElasticsearch() {
+	esClient := GetElasticsearchClient()
+
+    res, err := esClient.Ping()
+    if err != nil {
+        log.Fatalf("Error pinging Elasticsearch: %s", err)
+    }
+
+
+    defer res.Body.Close()
+    
+	if res.IsError() {
+        log.Printf("Elasticsearch ping error: %s", res.String())
+    } else {
+        log.Println("Successfully connected to Elasticsearch.")
+    }
 }

@@ -87,7 +87,7 @@ func processQueue() {
 
 func flushAllDataFromHashSet() {
 	for {
-		var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+		var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 		err := redisClient.CleanSlateonCache(ctx, utils.BLOG_COLLECTION)
 		defer cancel()
 
@@ -106,14 +106,16 @@ func main() {
 	mongoClient = db.GetMongoDBClient()
 	cronScheduler := cron.New()
 
-	cronScheduler.AddFunc("*/30 * * * *", func() {
+	cronScheduler.AddFunc("*/50 * * * *", func() {
 		log.Println("Executing cron job for flushing cache.")
+		// flushAllDataFromHashSet()
 	})
 
-	cronScheduler.AddFunc("*/1 * * * *", func() {
-		log.Println("Executing cron job : processQueue")
-		processQueue()
-	})
+	// cronScheduler.AddFunc("*/1 * * * *", func() {
+	// 	log.Println("Executing cron job processQueue")
+	// 	processQueue()
+	// })
+	processQueue()
 
 	cronScheduler.Start()
 

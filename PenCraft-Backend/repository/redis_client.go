@@ -36,13 +36,13 @@ func createRedisClient() *redis.Client {
 		Password:     "",
 		DB:           0,
 		MaxRetries:   2,
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 3 * time.Second,
+		DialTimeout:  15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
 		PoolSize:     10,
 		MinIdleConns: 4,
-		IdleTimeout:  4 * time.Minute,
-		PoolTimeout:  4 * time.Second,
+		IdleTimeout:  15 * time.Minute,
+		PoolTimeout:  15 * time.Second,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

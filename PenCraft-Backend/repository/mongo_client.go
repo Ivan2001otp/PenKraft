@@ -1,19 +1,14 @@
 package repository
 
 import (
-	"PencraftB/config"
 	"PencraftB/models"
 	relations "PencraftB/models/Relations"
 	"PencraftB/utils"
 	"context"
-	"encoding/json"
 	"fmt"
-
 	"log"
 	"sync"
 	"time"
-
-	"github.com/IBM/sarama"
 	"go.mongodb.org/mongo-driver/bson"
 
 	// "go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,7 +29,7 @@ var (
 // **********************************
 // mongodb ChangeStream operations
 // **********************************
-
+/*
 // GetMongoDbObserver ensures there exists a single active change-stream per collection. 
 func (observer *ChangeStreamManager) GetMongoDbObserver() (*mongo.ChangeStream, error) {
 	observer.mu.Lock()
@@ -137,6 +132,7 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 
 	log.Println("Stopped watching changes.")
 }
+*/
 
 //************************************************************************************
 //	MongoDB Connection & CRUD methods
@@ -390,17 +386,8 @@ BLOG OPERATIONS
 // Blog handlers
 func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION)
-
-	go func() {
-		watchStream.MonitorChanges();
-	}()
-
-	defer func(){
-		watchStream.CloseMongoDbObserver()
-		cancel()
-	}()
-
+	defer cancel();
+	
 
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
 
@@ -512,16 +499,7 @@ func (db *DBClient) UpdateBlog(ctx context.Context, blog models.Blog) error {
 		},
 	}
 
-	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION)
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
-
-	go func(){
-		watchStream.MonitorChanges()
-	}()
-
-	defer func(){
-		watchStream.CloseMongoDbObserver()
-	}()
 	
 	filter := bson.M{"blog_id": blog.Blog_id}
 	var upsert bool = false
@@ -569,14 +547,6 @@ func (db *DBClient) FetchBlogbyBlogId(ctx context.Context, blogId string) (*mode
 }
 
 func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
-	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION);
-	go func(){
-		watchStream.MonitorChanges()
-	}()
-
-	defer func(){
-		watchStream.CloseMongoDbObserver()
-	}()
 
 	filter := bson.M{} // empty filter matches
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
@@ -596,15 +566,7 @@ func (db *DBClient) DeleteAllBlogs(ctx context.Context) error {
 
 func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context, blogId string) error {
 	collection := db.GetCollection(utils.BLOG_COLLECTION)
-	watchStream := NewChangeStreamManager(db.client, utils.BLOG_COLLECTION);
-	go func(){
-		watchStream.MonitorChanges()
-	}()
-
-	defer func(){
-		watchStream.CloseMongoDbObserver()
-	}()
-
+	
 	filter := bson.M{"blog_id": blogId}
 	updateBody := bson.M{
 		"$set": bson.M{

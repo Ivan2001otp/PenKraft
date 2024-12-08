@@ -54,6 +54,9 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	blogModel.ID = primitive.NewObjectID()
 	blogModel.Blog_id = blogModel.ID.Hex()
 
+	// store the data in elasticsearch.
+	go repository.SaveBlogToES(blogModel)
+
 	var redisClient repository.RedisClient = *repository.GetRedisInstance()
 
 	op := models.Operation{
@@ -74,8 +77,7 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	blogId := fmt.Sprintf(blogModel.Blog_id)
 	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, blogId)
 
-	// store the data in elasticsearch.
-	go repository.SaveBlogToES(blogModel)
+	
 
 	if err != nil {
 		w.Write([]byte("Failed to push task to MQ!"))
@@ -454,6 +456,12 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to delete blog by blogid from mongodb")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	err = repository.DeleteBlogToES(*blog)
+	if err!= nil {
+		 log.Println("(SoftDeleteBlogbyidController)Something went wrong on soft deleting for ES.")
+		 http.Error(w,err.Error(),http.StatusConflict)
+		 return;
 	}
 
 	utils.GetSuccessResponse(w, http.StatusOK)

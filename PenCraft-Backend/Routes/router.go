@@ -11,6 +11,7 @@ func Router() *mux.Router {
 
 	//***********************End points for Search*************************
 	router.Handle("/api/v1/search",service.RateLimiter(controller.SearchHandler)).Methods("GET")
+	router.Handle("/api/v1/testall", service.RateLimiter(controller.GetAllBlogES)).Methods("GET")
 
 
 
