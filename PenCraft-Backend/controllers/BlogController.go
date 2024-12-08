@@ -74,6 +74,9 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	blogId := fmt.Sprintf(blogModel.Blog_id)
 	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, blogId)
 
+	// store the data in elasticsearch.
+	go repository.SaveBlogToES(blogModel)
+
 	if err != nil {
 		w.Write([]byte("Failed to push task to MQ!"))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -462,3 +465,5 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
+
+
