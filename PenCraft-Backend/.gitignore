@@ -3,3 +3,4 @@
 .vscode
 utils
 replica_data
+/config/*.conf

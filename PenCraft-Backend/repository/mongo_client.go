@@ -139,6 +139,7 @@ func (observer *ChangeStreamManager) MonitorChanges() {
 }
 
 //************************************************************************************
+//	MongoDB Connection & CRUD methods
 //************************************************************************************
 
 func GetMongoDBClient() *DBClient {
@@ -156,6 +157,8 @@ func GetMongoDBClient() *DBClient {
 
 		instance.connect()
 	})
+	
+	
 
 	return instance
 }
@@ -181,6 +184,12 @@ func (db *DBClient) connect() {
 
 	db.client = client
 	log.Println("Successfully connected to MongoDB")
+
+	/*
+	activate the watchstream (Gonna fix it later)
+	watchStream := NewChangeStreamManager(client, utils.BLOG_COLLECTION)
+	go watchStream.MonitorChanges();
+	*/
 }
 
 func (db *DBClient) GetCollection(collectionName string) *mongo.Collection {
@@ -624,6 +633,7 @@ func (db *DBClient) SoftDeleteBlogbyId(ctx context.Context, blogId string) error
 }
 
 // **********************************************************************
+// Relation btw BLog and TAG.
 // ***********************************************************************
 func (db *DBClient) DeleteAllRelations(collectionName string) error {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)

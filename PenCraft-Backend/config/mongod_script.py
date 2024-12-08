@@ -69,22 +69,27 @@ def start_mongo_instances() :
     print("starting mongo db instances")
     # removing --fork flag,because its not supported in windows unlike  macos, unix os.
     #start instance1
-    p1 = subprocess.Popen(["mongod","--config","mongod1.conf","--logpath",f"{MONGO_LOG_DIR}/log1/mongod1.log"])
-    print("instance1 started!")
+    try :
+            p1 = subprocess.run(["mongod","--config","mongod1.conf","--logpath",f"{MONGO_LOG_DIR}/log1/mongod1.log"],check=True)
+            print("instance1 started!")
+            print(f"p1 Success : {p1.stdout}")
 
-    #start instance2
-    p2 = subprocess.Popen(["mongod","--config","mongod2.conf","--logpath",f"{MONGO_LOG_DIR}/log2/mongod2.log"])
-    print("instance2 started!")
 
-    #start instance3
-    p3 = subprocess.Popen(["mongod","--config","mongod3.conf","--logpath",f"{MONGO_LOG_DIR}/log3/mongod3.log"])
-    print("instance3 started!")
+            #start instance2
+            p2 = subprocess.run(["mongod","--config","mongod2.conf","--logpath",f"{MONGO_LOG_DIR}/log2/mongod2.log"],check=True)
+            print("instance2 started!")
+            print(f"p2 Success : {p2.stdout}")
 
-    p1.wait()
-    p2.wait()
-    p3.wait()
+            #start instance3
+            p3 = subprocess.run(["mongod","--config","mongod3.conf","--logpath",f"{MONGO_LOG_DIR}/log3/mongod3.log"],check=True)
+            print("instance3 started!")
+            print(f"p3 Success : {p3.stdout}")
 
-    print("all 3 replica sets  started successfully !")
+            print("all 3 replica sets  started successfully !")
+    except subprocess.CalledProcessError as e:
+         print("stderr: ",e.stderr)
+         print("stdout: ",e.stdout)
+         print(f"Error : {e}")
 
 def initialize_replica_sets() :
     print("Initializing mongodb replica sets..")

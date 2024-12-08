@@ -33,3 +33,11 @@ func GetErrorResponse(w http.ResponseWriter,statusCode int, message string) {
 	}
 
 }
+
+func IsEmpty(str string) bool {
+	return len(str)==0;
+}
+
+func NotEmpty(str string) bool {
+	return len(str) > 0;
+}
