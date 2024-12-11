@@ -13,10 +13,12 @@ const RecentPost = ({ title, date, description, image }) => {
         {" "}
         Technology
       </div>
-      <p className="text-sm text-slate-400">{date}</p>
-      <h3 className="text-lg font-bold mb-2">{title}</h3>
 
-      <p className="text-left text-slate-200">{description}</p>
+      <div className="p-2">
+        <p className="text-sm text-slate-400 bokor-regular">{date}</p>
+        <h3 className="text-lg font-bold mb-2 bokor-regular tracking-wider">{title}</h3>
+        <p className="text-left text-slate-200 logo-font tracking-normal">{description}</p>
+      </div>
     </div>
   );
 };

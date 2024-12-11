@@ -47,10 +47,10 @@ const postData = [
     },
     // ... more posts
   ];
-const FPS = () => {
+const FPS = (blogList) => {
   return (
     <div className="p-6 rounded-lg">
-    <h2 className="text-2xl font-semibold">FPS Section</h2>
+    <h2 className="text-3xl font-semibold logo-font tracking-wider">FPS Section</h2>
     <RecentPosts posts={postData}/>
   </div>
   )

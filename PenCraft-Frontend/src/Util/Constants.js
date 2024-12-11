@@ -1,0 +1,1 @@
+export var FETCH_ALL_BLOG_URL = "http://localhost:8080/api/v1/blogs";

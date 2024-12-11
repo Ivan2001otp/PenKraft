@@ -127,7 +127,6 @@ func FetchAllBlogController(w http.ResponseWriter, r *http.Request) {
 		//if the data is present in redis, return it.
 		log.Println("Data fetched from redis !")
 		utils.GetSuccessResponse(w, http.StatusOK)
-
 		json.NewEncoder(w).Encode(status{
 			"status": http.StatusOK,
 			"data":   listOfBlog,

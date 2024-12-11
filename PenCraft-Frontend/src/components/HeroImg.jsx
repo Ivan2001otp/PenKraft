@@ -1,8 +1,5 @@
 import React, { useEffect } from "react";
-import { BsChevronCompactLeft, BsChevronCompactRight } from "react-icons/bs";
-import heroImg from "../assets/cube.jpg";
 import { useState } from "react";
-import { RxDotFilled } from "react-icons/rx";
 
 import img1 from "../assets/assassins.jpeg";
 import img2 from "../assets/avatar.jpeg";

@@ -6,6 +6,7 @@ import (
 	redisDb "PencraftB/repository"
 	"log"
 	"net/http"
+	"github.com/rs/cors"
 )
 
 func main(){
@@ -24,9 +25,19 @@ func main(){
 	defer client.Close();
 	defer rdb.Close();
 
-	router := routers.Router()
+	//cors options
+	corsOptions := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedMethods: []string{"GET","POST","PUT","DELETE"},
+		AllowedHeaders: []string{"Content-Type"},
+	})
 
-	if err:= http.ListenAndServe(":8080", router); err != nil{
+	router := routers.Router()
+	
+	handler := corsOptions.Handler(router)
+
+	log.Println("Server listening to 8080 port !");
+	if err:= http.ListenAndServe(":8080", handler); err != nil{
 		log.Fatal(err);
 	}
 	
