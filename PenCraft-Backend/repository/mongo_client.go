@@ -377,6 +377,52 @@ func (db *DBClient) HardDeleteTagbyId(ctx context.Context, tagId string) error {
 	return nil
 }
 
+// Update tag count
+func (db *DBClient) UpdateTagcount(isAddCount bool, tagId string) error {
+	var ctx, cancel = context.WithTimeout(context.Background(), 80 * time.Second);
+	collection := db.GetCollection(utils.ALL_TAG);
+
+	log.Println("Tag id is ",tagId)
+	defer cancel();
+
+	var incValue int32;
+	if (isAddCount) {
+		incValue = 1;
+	} else {
+		incValue = -1;
+	}
+
+	updatedTime,_ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	updatePayload := bson.D{
+		{
+			"$inc", bson.D{
+				{"blog_count",incValue},
+			}},
+		{
+			"$set",bson.D{
+				{"update_at", updatedTime},
+			}},
+	}
+
+	filter := bson.D{{"tag_id",tagId}}
+	result,err := collection.UpdateOne(ctx, filter, updatePayload)
+
+	if err != nil {
+		log.Println("Something went wrong while updating blog_count !");
+		log.Fatal(err)
+		return err;
+	}
+
+	if result.MatchedCount >0 {
+		log.Println("Successfully updated blog_count with ",incValue)
+	} else {
+		log.Println("Not update over blog_count !");
+	}
+
+	return nil;
+
+}
+
 /*
 ************************************************************************************
 BLOG OPERATIONS

@@ -51,11 +51,11 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	blogModel.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	blogModel.Is_delete = false
 
-	blogModel.ID = primitive.NewObjectID()
-	blogModel.Blog_id = blogModel.ID.Hex()
+	blogModelID := primitive.NewObjectID()
+	blogModel.Blog_id = blogModelID.Hex()
 
-	// store the data in elasticsearch.
-	go repository.SaveBlogToES(blogModel)
+	// store the data in elasticsearch.(Not necessary)
+	// go repository.SaveBlogToES(blogModel)
 
 	var redisClient repository.RedisClient = *repository.GetRedisInstance()
 
@@ -419,8 +419,8 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	// removing data from main memory.
 	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
 	if err != nil {
-		log.Println("HardDeleteBlogByBlogidController-> redisDb.FetchBlogbyBlogid()")
-		log.Println("Could not fetch blog from redis by blog-id")
+		log.Println("(SoftDeleteBlogByBlogidController) -> error occured.")
+		log.Println("Could not fetch blog from redis by blog-id :",blog_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -433,7 +433,7 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	err = redisDb.DeleteDatafromRedisHashset(ctx, utils.BLOG_COLLECTION, tempList)
 
 	if err != nil {
-		log.Println("HardDeleteBlogByBlogidController-> redisDb.DeleteDatafromRedisHashset()")
+		log.Println("(SoftDeleteBlogByBlogidController) -> redisDb.DeleteDatafromRedisHashset()")
 		log.Println("Could not delete blog from redis by blog-id")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -452,22 +452,24 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	// remove data from secondary memory mongoDB.
 	err = mongoDb.SoftDeleteBlogbyId(ctx, blog_id)
 	if err != nil {
-		log.Println("HardDeleteBlogByBlogidController->DeleteBlogbyId()")
+		log.Println("(SoftDeleteBlogByBlogidController) ->DeleteBlogbyId()")
 		log.Println("failed to delete blog by blogid from mongodb")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	err = repository.DeleteBlogToES(*blog)
-	if err!= nil {
-		 log.Println("(SoftDeleteBlogbyidController)Something went wrong on soft deleting for ES.")
-		 http.Error(w,err.Error(),http.StatusConflict)
-		 return;
-	}
+	// err = repository.UpdateBlogToDelete(blog.Blog_id)
+	// if err!= nil {
+	// 	 log.Println("(SoftDeleteBlogbyidController)Something went wrong on soft deleting for ES.")
+	// 	 http.Error(w,err.Error(),http.StatusConflict)
+	// 	 return;
+	// }
+	
+	
 
 	utils.GetSuccessResponse(w, http.StatusOK)
 	json.NewEncoder(w).Encode(
 		status{
-			"message": fmt.Sprintf("Blog %s is deleted permanently", blog_id),
+			"message": fmt.Sprintf("Blog %s is soft deleted", blog_id),
 			"status":  http.StatusOK,
 			"data":    blog_id,
 		},

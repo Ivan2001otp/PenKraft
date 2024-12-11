@@ -4,6 +4,7 @@ import (
 	"PencraftB/models"
 	"PencraftB/utils"
 	"bytes"
+
 	// "context"
 	"encoding/json"
 	"fmt"
@@ -53,12 +54,10 @@ func SaveBlogToES(blog models.Blog) {
 		return
 	}
 
-	
-	res,err := esClient.Index(utils.ES_BLOG,
-					bytes.NewReader(blogJson),
-					esClient.Index.WithDocumentID(blog.Blog_id),
-					esClient.Index.WithRefresh("true"))
-
+	res, err := esClient.Index(utils.ES_BLOG,
+		bytes.NewReader(blogJson),
+		esClient.Index.WithDocumentID(blog.Blog_id),
+		esClient.Index.WithRefresh("true"))
 
 	if err != nil {
 		log.Fatalf("Error (SaveBlogToES). %v", err)
@@ -67,9 +66,9 @@ func SaveBlogToES(blog models.Blog) {
 
 	if res != nil {
 		defer res.Body.Close()
-		
+
 		log.Println("The response on saving to ES : ", res)
-		
+
 		if res.IsError() {
 			log.Println("Error on getting response (SaveBlogToES). ")
 			return
@@ -253,93 +252,107 @@ func searchBlogByexcerpt(excerpt string) *([]models.Blog) {
 	return &blogList
 }
 
-func UpdateBlogToDelete(deletedBlog models.Blog) error {
+func UpdateBlogToDelete(blogId string) error {
 	esClient = GetElasticsearchClient()
 
 	updateDoc := map[string]interface{}{
-		"doc":map[string]interface{}{
-			"blog_id": deletedBlog.Blog_id,
+		"doc": map[string]interface{}{
+			"is_delete": "true",
 		},
 	}
 
 	updatedDocJson, err := json.Marshal(updateDoc)
 	if err != nil {
 		log.Println("(updateBlogToDelete)Error in marshalling document : %v", err)
-		return err;
+		return err
 	}
-
 
 	res, err := esClient.Update(
 		utils.ES_BLOG,
-		deletedBlog.Blog_id,
+		blogId,
 		bytes.NewReader(updatedDocJson),
 		esClient.Update.WithPretty(),
+		esClient.Update.WithRefresh("true"),
 	)
 	if err != nil {
 		log.Println("(updateBlogToDelete)Something went wrong while updating data in elasticSearch.")
-		return err;
+		return err
 	}
 
-
-	defer res.Body.Close();
+	defer res.Body.Close()
 	if res.IsError() {
 		return fmt.Errorf("Error response from elasticsearch is %v", res.String())
 	}
 
-	log.Printf("Blog with %s successfully soft deleted\n", deletedBlog.Blog_id);
-	return nil;
+	log.Printf("Blog with %s successfully soft deleted\n", blogId)
+	return nil
 }
 
-func FetchAllBlogFromES() ( * []models.Blog ) {
+func FetchAllBlogFromES() *[]models.Blog {
 	var blogList []models.Blog
 
-
 	query := map[string]interface{}{
-		"query":map[string]interface{}{
+		"query": map[string]interface{}{
 			"match_all": map[string]interface{}{},
 		},
 	}
 
-
 	queryJson, err := json.Marshal(query)
 	if err != nil {
-		 fmt.Errorf("Error marshalling query : %s", err)
-		 return nil;
+		fmt.Errorf("Error marshalling query : %s", err)
+		return nil
 	}
 
+
+	var result struct {
+		Hits struct {
+			Hits []struct {
+				ID string `json:"_id"`
+				Source models.Blog `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
 
 	res, err := esClient.Search(
 		esClient.Search.WithIndex(utils.ES_BLOG),
 		esClient.Search.WithBody(bytes.NewReader(queryJson)),
 		esClient.Search.WithPretty(),
 	)
+
+
 	if err != nil {
-		 fmt.Errorf("Error performing search query : %v", err);
-		 return nil;
+		fmt.Errorf("Error performing search query : %v", err)
+		return nil
+	}
+	if res.Body == nil {
+		fmt.Println("Response body is nil")
+		return nil
 	}
 
-	defer res.Body.Close();
+	defer res.Body.Close()
 
 	if res.IsError() {
-		 fmt.Errorf("error response from Elasticsearch: %s", res.String())
-		 return nil;
+		fmt.Errorf("error response from Elasticsearch: %s", res.String())
+		return nil
 	}
 
-	var result struct {
-		Hits struct {
-			Hits []struct {
-				Source models.Blog `json:"_source"`
-			} `json:"hits"`
-		} `json:"hits"`
-	}
+
+	log.Println("error here 1")
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
-		 fmt.Errorf("error parsing response: %s", err)
-		 return nil;
+		fmt.Errorf("error parsing response: %s", err)
+		return nil
+	}
+	log.Println("error here 2")
+
+	if len(result.Hits.Hits) == 0 {
+		fmt.Println("No results found.")
+		return nil
 	}
 
-
-
+	log.Println("error here 3")
 	for _, hit := range result.Hits.Hits {
+		blogId := hit.ID
+		log.Println(blogId)
 		blogList = append(blogList, hit.Source)
 	}
 
@@ -349,17 +362,16 @@ func FetchAllBlogFromES() ( * []models.Blog ) {
 func PingElasticsearch() {
 	esClient := GetElasticsearchClient()
 
-    res, err := esClient.Ping()
-    if err != nil {
-        log.Fatalf("Error pinging Elasticsearch: %s", err)
-    }
+	res, err := esClient.Ping()
+	if err != nil {
+		log.Fatalf("Error pinging Elasticsearch: %s", err)
+	}
 
+	defer res.Body.Close()
 
-    defer res.Body.Close()
-    
 	if res.IsError() {
-        log.Printf("Elasticsearch ping error: %s", res.String())
-    } else {
-        log.Println("Successfully connected to Elasticsearch.")
-    }
+		log.Printf("Elasticsearch ping error: %s", res.String())
+	} else {
+		log.Println("Successfully connected to Elasticsearch.")
+	}
 }

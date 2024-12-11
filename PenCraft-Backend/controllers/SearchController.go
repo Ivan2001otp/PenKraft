@@ -9,28 +9,28 @@ import (
 	"net/http"
 )
 
-func SearchHandler(w http.ResponseWriter, r *http.Request){
+func SearchHandler(w http.ResponseWriter, r *http.Request) {
 
-	if (r.Method != http.MethodGet) {
+	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request. Supposed to be GET request", http.StatusMethodNotAllowed)
-		return;
+		return
 	}
 }
 
+// for testing
 func GetAllBlogES(w http.ResponseWriter, r *http.Request) {
-	if (r.Method != http.MethodGet){
-		http.Error(w, "Invalid request. Supposed to be GET request.",http.StatusMethodNotAllowed)
-		return;
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request. Supposed to be GET request.", http.StatusMethodNotAllowed)
+		return
 	}
 
-	var blogList *[] models.Blog;
+	var blogList []models.Blog
 
-	blogList = (repository.FetchAllBlogFromES())
-	if blogList== nil {
-		utils.GetErrorResponse(w, http.StatusConflict, fmt.Sprintf("Blog list is %v",blogList));
-		return ;
+	blogList = *repository.FetchAllBlogFromES()
+	if blogList == nil {
+		utils.GetErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Blog list is %v", blogList))
+		return
 	}
-
 
 	utils.GetSuccessResponse(w, http.StatusOK)
 	json.NewEncoder(w).Encode(
@@ -40,4 +40,8 @@ func GetAllBlogES(w http.ResponseWriter, r *http.Request) {
 			"data":    blogList,
 		},
 	)
+}
+
+func SoftDeleteBlog(w http.ResponseWriter, r *http.Request) {
+
 }

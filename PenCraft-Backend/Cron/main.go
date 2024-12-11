@@ -65,6 +65,7 @@ func processQueue() {
 				relation.Tag_id = operation.Data.Tag_id
 
 				mongoClient.SaveRelation(utils.BLOG_R_TAG, relation)
+				mongoClient.UpdateTagcount(true, operation.Data.Tag_id);
 				break
 
 			case utils.DELETE_OPS:
