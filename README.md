@@ -6,3 +6,9 @@ Follow my twitter handle [Dezmond Dsouza](https://x.com/I_Dsouza7697) where i sh
 ## Architecture
 - Here is eye view of backend implemented . This design is tentative.
 ![](https://github.com/Ivan2001otp/PenKraft/blob/main/PenCraft-Backend/architect.png)
+
+
+## Work in Progress(Glimpse)
+Check out this video: [YouTube Video](https://youtu.be/ZI2gg7NROao)
+
+
