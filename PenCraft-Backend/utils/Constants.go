@@ -21,7 +21,10 @@ var ES_BLOG string = "blog";
 var ALL_TAG string = "All Tags"
 var BLOG_R_TAG string = "Blog_R_Tag"
 var BLOG_COLLECTION = "Blogs"
-
+var PS5_COLLECTION = "PS5-Collection"
+var RPG_COLLECTION = "RPG-Collection"
+var FPS_COLLECTION = "FPS-Collection"
+var SONY_COLLECTION = "SONY-Collection"
 
 
 // kafka

@@ -430,12 +430,12 @@ BLOG OPERATIONS
 */
 
 // Blog handlers
-func (db *DBClient) SaveBlog(blog models.Blog) (interface{}, error) {
+func (db *DBClient) SaveBlog(blog models.Blog, collectionName string) (interface{}, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 	defer cancel();
 	
 
-	collection := db.GetCollection(utils.BLOG_COLLECTION)
+	collection := db.GetCollection(collectionName)
 
 	resultChan := make(chan *mongo.InsertOneResult)
 	errChan := make(chan error)

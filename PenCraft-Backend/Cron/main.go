@@ -58,7 +58,13 @@ func processQueue() {
 				log.Printf("Saving blog %s in db....", operation.Data.Blog_id)
 
 				log.Println("Create operation initialized")
-				mongoClient.SaveBlog(operation.Data)
+				err := saveBlogByCategoryName(operation.Data, mongoClient);
+
+				if err != nil {
+					log.Println("Error on saving blog by category !");
+					log.Println(err.Error());
+					break;
+				}
 
 				var relation relations.R_Tag_Blog
 				relation.Blog_id = operation.Data.Blog_id
@@ -84,6 +90,34 @@ func processQueue() {
 		}
 
 	}
+}
+
+func saveBlogByCategoryName(blog models.Blog, mongoClient *db.DBClient) error {
+
+	category := blog.Tag_name
+	var err error;
+
+	switch (category) {
+	
+	case utils.FPS_COLLECTION:
+		_, err = mongoClient.SaveBlog(blog, utils.FPS_COLLECTION)
+		break;
+
+	case utils.RPG_COLLECTION: 
+		_, err = mongoClient.SaveBlog(blog, utils.RPG_COLLECTION)
+		break;
+
+	case utils.SONY_COLLECTION:
+		_, err = mongoClient.SaveBlog(blog, utils.SONY_COLLECTION)
+		break;
+	
+	case utils.PS5_COLLECTION:
+		_, err = mongoClient.SaveBlog(blog, utils.PS5_COLLECTION)
+		break;
+	
+	}
+
+	return err;
 }
 
 func flushAllDataFromHashSet() {
