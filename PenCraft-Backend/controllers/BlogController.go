@@ -4,6 +4,7 @@ import (
 	"PencraftB/models"
 	"PencraftB/repository"
 	"PencraftB/utils"
+	"strconv"
 
 	"context"
 	"encoding/json"
@@ -14,7 +15,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type status map[string]interface{}
@@ -96,6 +99,87 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 		log.Println("Could not encode success Response for createBlog controller")
 		http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 	}
+}
+
+
+//fetch all sony blogs with primary-id cursor based pagination.
+func FetchBlogsHandler(w http.ResponseWriter, r *http.Request) {
+
+	query := r.URL.Query()
+	category := query.Get("category");
+
+	collectionName := utils.GetCollectionByName(category)
+	collection := repository.GetMongoDBClient().GetCollection(collectionName);
+
+	limit, _ := strconv.Atoi(query.Get("limit"))
+	
+	if limit == 0 {
+		limit = utils.LIMIT // bydefault
+	}
+
+	cursor := query.Get("cursor"); //cursor for pagination
+	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
+	
+	//filter and options
+	
+	filter := bson.M{"is_delete":false}// fetch only non-deleted blogs
+	opts := options.Find().SetSort(bson.D{{Key:"_id", Value:-1}}).SetLimit(int64(limit))
+
+	if cursor != "" {
+		cursorID, err := 	primitive.ObjectIDFromHex(cursor)
+		if err == nil {
+			filter["_id"] = bson.M{"$lt":cursorID} // fetch blogs older than cursor
+		} else {
+			log.Println("could not parse back to primitive object id ")
+			log.Fatal(err.Error())
+		}
+	}
+
+
+	cur, err := collection.Find(ctx, filter, opts);
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error fetching blogs: %v", err), http.StatusInternalServerError)
+		return;
+	}
+
+
+	defer func ()  {
+		cur.Close(ctx)
+		cancel()
+	}()
+
+		// parse results
+		var blogs []models.Blog
+		for cur.Next(ctx) {
+			var blog models.Blog
+
+			if err := cur.Decode(&blog); err != nil {
+				http.Error(w, fmt.Sprintf("Error decoding blog: %v", err), http.StatusInternalServerError)
+				return;
+			}
+
+			blogs = append(blogs, blog)
+		}
+
+
+		//Generate next cursor
+		var nextCursor string
+		if len(blogs) > 0 {
+			nextCursor = blogs[len(blogs)-1].Blog_id
+		}
+
+		utils.GetSuccessResponse(w, http.StatusOK)
+		json.NewEncoder(w).Encode(
+			status{
+				"status":http.StatusOK,
+				"data": blogs,
+				"cursor": nextCursor,
+			},
+		)
+
+		return;
+		
+	
 }
 
 // fetch all blogs(GET)

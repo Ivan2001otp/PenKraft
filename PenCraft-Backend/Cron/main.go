@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"github.com/robfig/cron/v3"
 	"log"
-	"time"
 )
 
 var (
@@ -70,7 +69,7 @@ func processQueue() {
 				relation.Blog_id = operation.Data.Blog_id
 				relation.Tag_id = operation.Data.Tag_id
 
-				mongoClient.SaveRelation(utils.BLOG_R_TAG, relation)
+				//mongoClient.SaveRelation(utils.BLOG_R_TAG, relation)
 				mongoClient.UpdateTagcount(true, operation.Data.Tag_id);
 				break
 
@@ -99,38 +98,25 @@ func saveBlogByCategoryName(blog models.Blog, mongoClient *db.DBClient) error {
 
 	switch (category) {
 	
-	case utils.FPS_COLLECTION:
+	case utils.Fps_tag:
 		_, err = mongoClient.SaveBlog(blog, utils.FPS_COLLECTION)
 		break;
 
-	case utils.RPG_COLLECTION: 
+	case utils.Rpg_tag: 
 		_, err = mongoClient.SaveBlog(blog, utils.RPG_COLLECTION)
 		break;
 
-	case utils.SONY_COLLECTION:
+	case utils.Sony_tag:
 		_, err = mongoClient.SaveBlog(blog, utils.SONY_COLLECTION)
 		break;
 	
-	case utils.PS5_COLLECTION:
+	case utils.Ps5_tag:
 		_, err = mongoClient.SaveBlog(blog, utils.PS5_COLLECTION)
 		break;
 	
 	}
 
 	return err;
-}
-
-func flushAllDataFromHashSet() {
-	for {
-		var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		err := redisClient.CleanSlateonCache(ctx, utils.BLOG_COLLECTION)
-		defer cancel()
-
-		if err != nil {
-			log.Fatalf("Something wrong while delete all data from cache(flush.go) : %v", err)
-			continue
-		}
-	}
 }
 
 func main() {
