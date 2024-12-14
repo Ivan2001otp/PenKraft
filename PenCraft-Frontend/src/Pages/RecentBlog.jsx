@@ -1,7 +1,7 @@
 // RecentPost.js
 import React from "react";
 
-const RecentPost = ({ title, date, description, image }) => {
+const RecentPost = ({ blog_id,body ,excerpt, image, slug, tag_name, tag_id, updated_at ,user_id ,title  }) => {
   return (
     <div className=" shadow-md rounded-lg transition duration-500 ease-in-out cursor-pointer mb-4">
       <img
@@ -11,13 +11,13 @@ const RecentPost = ({ title, date, description, image }) => {
       />
       <div className="-mt-12 mb-4  bg-green-600 absolute px-4 py-1 bg-opacity-80 rounded-r-xl z-10 ">
         {" "}
-        Technology
+        {tag_name}
       </div>
 
       <div className="p-2">
-        <p className="text-sm text-slate-400 bokor-regular">{date}</p>
+        <p className="text-sm text-slate-400 bokor-regular">{updated_at}</p>
         <h3 className="text-lg font-bold mb-2 bokor-regular tracking-wider">{title}</h3>
-        <p className="text-left text-slate-200 logo-font tracking-normal">{description}</p>
+        <p className="text-left text-slate-200 logo-font tracking-normal">{excerpt}</p>
       </div>
     </div>
   );

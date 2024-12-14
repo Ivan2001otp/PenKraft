@@ -44,12 +44,18 @@ const postData = [
   },
 ];
 
-const Sony = (blogList) => {
+const Sony = ({blogList}) => {
+  console.log("Blog list is below");
+
+  blogList.map((item, index)=>{
+    console.log(item)
+  })
+
   return (
     <div className="p-6  rounded-lg">
     <h2 className="text-3xl font-semibold logo-font tracking-wider">Sony PS</h2>
     <p className='logo-font tracking-wide'>Here you can explore all the latest games!</p>
-    <RecentPosts posts={postData}/>
+    <RecentPosts posts={blogList}/>
   </div>
   )
 }

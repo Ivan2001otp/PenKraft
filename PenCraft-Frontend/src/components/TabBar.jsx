@@ -2,20 +2,25 @@ import Sony from "./category/Sony";
 import FPS from "./category/FPS";
 import RPG from "./category/RPG";
 import Games from "./category/Games";
-import { FETCH_ALL_BLOG_URL } from "../Util/Constants";
+import { SONY_BLOGS_URL } from "../Util/Constants";
 import { motion } from "framer-motion";
-import {RPGs} from '../Util/Constants'
-import {FPSG} from '../Util/Constants'
-import {PS5G} from '../Util/Constants'
-import {MARVEL} from '../Util/Constants'
-import {DC} from '../Util/Constants'
-
+import { RPGs } from "../Util/Constants";
+import { FPSG } from "../Util/Constants";
+import { PS5G } from "../Util/Constants";
+import { MARVEL } from "../Util/Constants";
+import { DC } from "../Util/Constants";
+import { SONY } from "../Util/Constants";
 
 // React libraries
 import { useEffect, useState } from "react";
 import { CircularProgress } from "@mui/joy";
+import { label } from "framer-motion/client";
 
 const tabs = [
+  {
+    label: SONY,
+    id: SONY,
+  },
   {
     label: RPGs,
     id: RPGs,
@@ -29,37 +34,36 @@ const tabs = [
     id: PS5G,
   },
   
-  {
-    label: MARVEL,
-    id:MARVEL,
-  },
-  {
-    label: DC,
-    id: DC,
-  }
 ];
-
 
 const TabBar = () => {
   const [selectedTab, setSelectedTab] = useState(tabs[0].id);
-  let jsonResponse;
+  const [jsonResponse, setJsonResponse] = useState(Array)
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
- 
+
+  const params = new URLSearchParams({
+    category: "Sony",
+    cursor: "",
+  });
+
+  const urlWithParams = `${SONY_BLOGS_URL}?${params.toString()}`;
+
   // fetches data from api
   useEffect(() => {
     const loadData = async () => {
-
       setLoading(true);
-      await delay(3000);
+      await delay(2000);
 
       try {
-        await fetch(FETCH_ALL_BLOG_URL)
+        await fetch(urlWithParams)
           .then((response) => response.json())
           .then((resp) => {
             let saveResp = resp["data"];
-            jsonResponse = saveResp;
+            setJsonResponse(saveResp)
             console.log("The response is saveResp ", jsonResponse);
           });
       } catch (error) {
@@ -71,16 +75,7 @@ const TabBar = () => {
     };
 
     loadData();
-  }, []);
-
-  // filters the data on the basis of types
-  useEffect(()=>{
-    setLoading(true);
-    delay(4000)
-    console.log(`Displaying ${selectedTab} section !`);
-    setLoading(false);
-    // filter logic and give the output.
-  },[selectedTab])
+  }, [selectedTab]);
 
 
   if (loading) {
@@ -90,10 +85,10 @@ const TabBar = () => {
         exit={{ opacity: 1 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="loading-container"
+        className="flex items-center justify-center w-full h-screen"
       >
-        <CircularProgress color="success" variant="outlined" size="lg"/>
-       </motion.div>
+        <CircularProgress color="success" variant="outlined" size="lg" />
+      </motion.div>
     );
   }
 
@@ -138,12 +133,10 @@ const TabBar = () => {
           ))}
         </div>
         <div className="mt-8">
-          {selectedTab === RPGs && <Sony blogList={[]} />}
-          {selectedTab === FPSG && <FPS blogList={[]}/>}
-          {selectedTab === PS5G && <RPG blogList={[]}/>}
-          {selectedTab === MARVEL && <Games blogList={[]}/>}
-          {selectedTab === DC && <Games blogList={[]}/>}
-
+          {selectedTab === RPGs && <RPG blogList={[]} />}
+          {selectedTab === FPSG && <FPS blogList={[]} />}
+          {selectedTab === PS5G && <Games blogList={[]} />}
+          {selectedTab === SONY && <Sony blogList={jsonResponse || []} />}
         </div>
       </div>
     </motion.div>
