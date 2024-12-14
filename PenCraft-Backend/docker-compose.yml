@@ -49,20 +49,20 @@ services:
 
 
 #elastic search
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    container_name: elastic_search
-    environment:
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xmx512m -Xms512m
-    ports:
-      - "9200:9200" #HTTP access
-      - "9300:9300" # for internal coms
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-    networks:
-      - es_network
-    restart: always
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+  #   container_name: elastic_search
+  #   environment:
+  #     - discovery.type=single-node
+  #     - ES_JAVA_OPTS=-Xmx512m -Xms512m
+  #   ports:
+  #     - "9200:9200" #HTTP access
+  #     - "9300:9300" # for internal coms
+  #   volumes:
+  #     - elasticsearch-data:/usr/share/elasticsearch/data
+  #   networks:
+  #     - es_network
+  #   restart: always
 
   redis:
     image: redis:latest
@@ -77,11 +77,8 @@ services:
 
 volumes:
   redis-data:
-  elasticsearch-data:
 
 networks:
-  es_network:
-    driver: bridge
   redis-net:
     driver: bridge
  

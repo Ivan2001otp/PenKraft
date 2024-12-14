@@ -18,6 +18,8 @@ func Router() *mux.Router {
 	//******************End points for BLOG Crud***************************
 	router.Handle("/api/v1/blog", service.RateLimiter(controller.CreateBlogController)).Methods("POST")
 
+	router.Handle("/api/v1/blogs/sony", service.RateLimiter(controller.FetchBlogsHandler)).Methods("GET");
+
 	router.Handle("/api/v1/blogs", service.RateLimiter(controller.FetchAllBlogController)).Methods("GET")
 	router.Handle("/api/v1/blog/{blog_id}", service.RateLimiter(controller.FetchBlogbyBlogIdController)).Methods("GET")
 	

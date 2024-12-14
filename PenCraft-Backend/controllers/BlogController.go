@@ -107,7 +107,7 @@ func FetchBlogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	category := query.Get("category");
-
+	log.Println("Category is ", category)
 	collectionName := utils.GetCollectionByName(category)
 	collection := repository.GetMongoDBClient().GetCollection(collectionName);
 
@@ -121,7 +121,6 @@ func FetchBlogsHandler(w http.ResponseWriter, r *http.Request) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
 	
 	//filter and options
-	
 	filter := bson.M{"is_delete":false}// fetch only non-deleted blogs
 	opts := options.Find().SetSort(bson.D{{Key:"_id", Value:-1}}).SetLimit(int64(limit))
 
