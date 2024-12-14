@@ -3,7 +3,7 @@ import React from "react";
 
 const RecentPost = ({ blog_id,body ,excerpt, image, slug, tag_name, tag_id, updated_at ,user_id ,title  }) => {
   return (
-    <div className=" shadow-md rounded-lg transition duration-500 ease-in-out cursor-pointer mb-4">
+    <div className=" shadow-md rounded-lg transition duration-500 ease-in-out cursor-pointer mb-4 hover:border-2 hover:border-slate-300 hover:shadow-xl hover:translate-y-[-4px] hover:scale-110">
       <img
         src={image}
         alt={title}

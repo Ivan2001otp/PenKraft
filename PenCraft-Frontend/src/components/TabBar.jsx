@@ -124,7 +124,7 @@ const TabBar = () => {
               onClick={() => setSelectedTab(item.id)}
               className={`px-4 py-2 text-lg font-semibold ${
                 selectedTab === item.id
-                  ? "bg-slate-300 text-slate-800 rounded-3xl border-orange-400"
+                  ? "bg-blue-600 text-slate-300 rounded-3xl border-2  border-white"
                   : "bg-gray-200 text-slate-700"
               } rounded-lg transition duration-400`}
             >
