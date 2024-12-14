@@ -9,7 +9,9 @@ import (
 	"log"
 	"sync"
 	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	// "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -477,6 +479,52 @@ func (db *DBClient) SaveBlog(blog models.Blog, collectionName string) (interface
 	}
 }
 
+func (db *DBClient) GetSonyBlogsinPaginatedManner(ctx context.Context,limit int, cursor string, collectionName string) ([] models.Blog, error) {
+
+	collection := db.GetCollection(collectionName)
+	filter := bson.M{"is_delete": false}
+	opts := options.Find().SetSort(bson.D{{Key: "_id",Value : -1}}).SetLimit(int64(limit))
+
+	//check cursor
+	if (cursor != "") {
+		cursorID, err := primitive.ObjectIDFromHex(cursor)
+		if err == nil {
+			filter["_id"] = bson.M{"$lt": cursorID} // fetch blogs older than cursor
+		} else {
+			log.Println("Could not parse back to primitive objectID of mongoDB")
+			log.Fatal(err.Error())
+			return nil,err;
+		}
+	}
+
+	cur, err := collection.Find(ctx, filter, opts);
+	if err != nil {
+		log.Println("Could not find sony blogs. Error !")
+		log.Println(err.Error())
+		return nil,err;
+	}
+
+	defer func ()  {
+		cur.Close(ctx)
+	}()
+
+
+	// parse results to blog []struct
+
+	var sonyBlogs []models.Blog
+	
+	for cur.Next(ctx) {
+		var blog models.Blog
+		if err := cur.Decode(&blog); err != nil {
+			log.Fatalf("Error on decoding sony blogs %v",err)
+			return nil, err;
+		}
+
+		sonyBlogs = append(sonyBlogs, blog)
+	}
+
+	return sonyBlogs,nil;
+}
 
 func (db *DBClient) FetchAllBlogs(ctx context.Context) ([]models.Blog, error) {
 

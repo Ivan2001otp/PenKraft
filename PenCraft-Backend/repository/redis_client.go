@@ -108,6 +108,16 @@ func (r *RedisClient) Get(ctx context.Context, key string) (string, error) {
 	return r.client.Get(ctx, key).Result()
 }
 
+// need to look into this.
+func (r *RedisClient) GetHybrid(ctx context.Context, key string) (interface{} , error) {
+	return r.client.Get(ctx, key).Result()
+}
+
+// need to look into this
+func (r *RedisClient) SetHybrid(ctx context.Context, key string, value interface{}, ttl time.Duration) *redis.StatusCmd {
+  return r.client.Set(ctx, key, value, ttl)
+}
+
 func (r *RedisClient) DeleteFromHashset(ctx context.Context, key string) error {
 	return r.client.HDel(ctx, key).Err()
 }

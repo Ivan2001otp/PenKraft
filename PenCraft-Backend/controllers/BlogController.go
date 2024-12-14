@@ -15,9 +15,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type status map[string]interface{}
@@ -80,8 +78,6 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	blogId := fmt.Sprintf(blogModel.Blog_id)
 	err = redisClient.PushToMessageQueue(context.Background(), utils.MESSAGE_QUEUE_NAME, blogId)
 
-	
-
 	if err != nil {
 		w.Write([]byte("Failed to push task to MQ!"))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -101,84 +97,93 @@ func CreateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-//fetch all sony blogs with primary-id cursor based pagination.
+// fetch all sony blogs with primary-id cursor based pagination.
 func FetchBlogsHandler(w http.ResponseWriter, r *http.Request) {
+	mongoClient := repository.GetMongoDBClient()
+	redisClient := repository.GetRedisInstance()
 
 	query := r.URL.Query()
-	category := query.Get("category");
+	category := query.Get("category")
 	log.Println("Category is ", category)
-	collectionName := utils.GetCollectionByName(category)
-	collection := repository.GetMongoDBClient().GetCollection(collectionName);
 
 	limit, _ := strconv.Atoi(query.Get("limit"))
-	
+
 	if limit == 0 {
-		limit = utils.LIMIT // bydefault
+		limit = utils.LIMIT // by default
 	}
 
-	cursor := query.Get("cursor"); //cursor for pagination
+	cursor := query.Get("cursor") //cursor for pagination
 	var ctx, cancel = context.WithTimeout(context.Background(), 80*time.Second)
-	
-	//filter and options
-	filter := bson.M{"is_delete":false}// fetch only non-deleted blogs
-	opts := options.Find().SetSort(bson.D{{Key:"_id", Value:-1}}).SetLimit(int64(limit))
+	defer cancel()
 
-	if cursor != "" {
-		cursorID, err := 	primitive.ObjectIDFromHex(cursor)
-		if err == nil {
-			filter["_id"] = bson.M{"$lt":cursorID} // fetch blogs older than cursor
-		} else {
-			log.Println("could not parse back to primitive object id ")
-			log.Fatal(err.Error())
-		}
-	}
+	cacheKey := fmt.Sprintf("blogs:page:%s:limit:%d", cursor, limit)
+	log.Println("Cache key is ",cacheKey);
 
-
-	cur, err := collection.Find(ctx, filter, opts);
+	//fetching from Redis
+	cachedResult, err := redisClient.Get(ctx, cacheKey)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error fetching blogs: %v", err), http.StatusInternalServerError)
-		return;
+		log.Println("Error on accessing category blogs from redis . ", err.Error())
+	} else {
+		// Cache Hit try-on
+		log.Println("Cache Hit happened for category blog fetch operation - ",category)
+		var cachedData []map[string]interface{}
+		if err := json.Unmarshal([]byte(cachedResult), &cachedData); err != nil {
+			http.Error(w, "Error parsing cache data", http.StatusInternalServerError)
+			return;
+		}
+
+		response := map[string] interface{}{
+			"status":http.StatusOK,
+			"cursor":"success",
+			"data":cachedData,
+		}
+		responseJson,err := json.Marshal(response)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, "Error encoding response ",http.StatusInternalServerError)
+			return;
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(responseJson)
+		return
+	}
+
+	// Disk access (Cache Miss)
+	log.Println("Cache Miss happened for category blog fetch operation - ",category)
+	collectionName := utils.GetCollectionByName(category)
+
+	blogs, err := mongoClient.GetSonyBlogsinPaginatedManner(ctx, limit, cursor, collectionName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	//Generate next cursor
+	var nextCursor string
+	if len(blogs) > 0 {
+		nextCursor = blogs[len(blogs)-1].Blog_id
 	}
 
 
-	defer func ()  {
-		cur.Close(ctx)
-		cancel()
-	}()
-
-		// parse results
-		var blogs []models.Blog
-		for cur.Next(ctx) {
-			var blog models.Blog
-
-			if err := cur.Decode(&blog); err != nil {
-				http.Error(w, fmt.Sprintf("Error decoding blog: %v", err), http.StatusInternalServerError)
-				return;
-			}
-
-			blogs = append(blogs, blog)
-		}
-
-
-		//Generate next cursor
-		var nextCursor string
-		if len(blogs) > 0 {
-			nextCursor = blogs[len(blogs)-1].Blog_id
-		}
-
-		utils.GetSuccessResponse(w, http.StatusOK)
-		json.NewEncoder(w).Encode(
-			status{
-				"status":http.StatusOK,
-				"data": blogs,
-				"cursor": nextCursor,
-			},
-		)
-
-		return;
-		
+	// cache the new data to redis
+	newResponseData, err := json.Marshal(blogs)
+	cmd := redisClient.SetHybrid(ctx, cacheKey, newResponseData, 10*time.Minute)
 	
+	if cmd.Err() != nil {
+		log.Println("Something went wrong while caching category type blog")
+		log.Fatal(cmd.Err().Error())
+
+	}
+
+	utils.GetSuccessResponse(w, http.StatusOK)
+	json.NewEncoder(w).Encode(
+		status{
+			"status": http.StatusOK,
+			"data":   blogs,
+			"cursor": nextCursor,
+		},
+	)
+
 }
 
 // fetch all blogs(GET)
@@ -293,7 +298,7 @@ func FetchBlogbyBlogIdController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache Miss(if the response is not present in redis,fetch from redis and cache the same.)
-	blog, err = mongoDb.FetchBlogbyBlogId(ctx,blogId)
+	blog, err = mongoDb.FetchBlogbyBlogId(ctx, blogId)
 	log.Println(blog)
 
 	if err != nil {
@@ -331,7 +336,6 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	var requestPayload models.Blog
 	err := json.NewDecoder(r.Body).Decode(&requestPayload)
 	if err != nil {
@@ -339,7 +343,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blog_id := requestPayload.Blog_id
-	
+
 	redisDb := repository.GetRedisInstance()
 	mongoDb := repository.GetMongoDBClient()
 
@@ -377,7 +381,7 @@ func UpdateBlogController(w http.ResponseWriter, r *http.Request) {
 	blog.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 	// save the updated data to mongodb
-	err = mongoDb.UpdateBlog(ctx,*blog)
+	err = mongoDb.UpdateBlog(ctx, *blog)
 	if err != nil {
 		log.Println("Blog Controller -> UpdateBlogbyBlogid -> mongoDb.UpdateBlog()")
 		utils.GetErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -502,7 +506,7 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	blog, err := redisDb.FetchBlogbyBlogid(ctx, blog_id)
 	if err != nil {
 		log.Println("(SoftDeleteBlogByBlogidController) -> error occured.")
-		log.Println("Could not fetch blog from redis by blog-id :",blog_id)
+		log.Println("Could not fetch blog from redis by blog-id :", blog_id)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -545,8 +549,6 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 	// 	 http.Error(w,err.Error(),http.StatusConflict)
 	// 	 return;
 	// }
-	
-	
 
 	utils.GetSuccessResponse(w, http.StatusOK)
 	json.NewEncoder(w).Encode(
@@ -557,5 +559,3 @@ func SoftDeleteBlogbyidController(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
-
-
