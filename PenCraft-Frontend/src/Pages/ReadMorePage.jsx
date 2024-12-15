@@ -48,6 +48,7 @@ const ReadMorePage = () => {
 
   return (
     <div>
+        <div className='text-white text-5xl flex justify-center logo-font mb-8'>Read More Sony</div>
         <div className='px-6 py-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 mt-8'>
           { 
             blogs &&
