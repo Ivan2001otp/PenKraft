@@ -55,7 +55,7 @@ const Sony = ({blogList}) => {
     <div className="p-6  rounded-lg">
     <h2 className="text-3xl font-semibold logo-font tracking-wider">Sony PS</h2>
     <p className='logo-font tracking-wide'>Here you can explore all the latest games!</p>
-    <RecentPosts posts={blogList}/>
+    <RecentPosts posts={blogList} category={"Sony"}/>
   </div>
   )
 }

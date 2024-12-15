@@ -2,11 +2,11 @@ import React from 'react';
 import RecentPost from './RecentBlog'
 import { useNavigate } from 'react-router';
 
-const RecentPosts = ({ posts }) => {
+const RecentPosts = ({ posts, category }) => {
   const navigate = useNavigate();
 
   const handleReadMore=()=>{
-    navigate('/read-more', {state:{list: posts}});
+    navigate('/read-more', {state:{list: posts, niche: category}});
   };
 
   return (

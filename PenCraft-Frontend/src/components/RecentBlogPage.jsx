@@ -1,5 +1,4 @@
 import React from "react";
-// import RecentPosts from "../Pages/RecentBlogs";
 import TabBar from "./TabBar";
 
 const RecentBlogPage = () => {

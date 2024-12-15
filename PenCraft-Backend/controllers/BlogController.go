@@ -134,7 +134,7 @@ func FetchBlogsHandler(w http.ResponseWriter, r *http.Request) {
 
 		response := map[string] interface{}{
 			"status":http.StatusOK,
-			"cursor":"success",
+			"cursor":cachedData[len(cachedData)-1]["blog_id"],
 			"data":cachedData,
 		}
 		responseJson,err := json.Marshal(response)
