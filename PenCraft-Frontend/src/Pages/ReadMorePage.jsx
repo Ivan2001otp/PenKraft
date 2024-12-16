@@ -3,6 +3,7 @@ import RecentPost from './RecentBlog';
 import { useLocation } from 'react-router'
 import { SONY_BLOGS_URL } from "../Util/Constants";
 import { motion } from 'framer-motion'; 
+import { cache } from 'react';
 
 const ReadMorePage = () => {
   const location = useLocation();
@@ -15,6 +16,37 @@ const ReadMorePage = () => {
   const [cursor, setCursor] = useState(cursor1['blog_id'].toString()); // page number for pagination
   
 
+  // caching service
+  const getCache = (key) => {
+    const cachedData = localStorage.getItem(key);
+
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData)
+      const currentTime = Date.now()
+
+      // check if ttl is still valid(5mins)
+      if (currentTime-parsedData.timestamp < 5 * 60 * 1000){
+        return parsedData.data;
+      } else {
+        // cache expired
+        localStorage.removeItem(key);
+      }//<-ms
+    }
+
+    return null;
+  };
+
+
+  // helper function to set cached data
+  const setCache = (key, data) => {
+    const cacheData = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    localStorage.setItem(key, JSON.stringify(cacheData));
+  };
+
   const fetchMoreBlogs = async() => {
       setLoading(true)
 
@@ -26,6 +58,15 @@ const ReadMorePage = () => {
 
       const urlWithParams = `${SONY_BLOGS_URL}?${params.toString()}`;
 
+      const cachedBlogs = getCache(urlWithParams)
+      if (cachedBlogs) {
+        console.log("Using cached data");
+        setBlogs((prevList) => [...prevList, ...cachedBlogs]);
+        setLoading(false);
+        console.log("Cache Hit !");
+        return;
+      }
+
       try {
 
         await fetch(urlWithParams)
@@ -35,7 +76,10 @@ const ReadMorePage = () => {
             setCursor(result['cursor'])
 
             const newData = result['data'];
+
             setBlogs((prevList)=>[...prevList, ...newData]);
+            setCache(urlWithParams, newData)
+            console.log("The response is cached ! (Cache miss)")
           });
 
       } catch (error) {
