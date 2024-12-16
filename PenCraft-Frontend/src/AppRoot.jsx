@@ -4,6 +4,7 @@ import HeroImg from "./components/HeroImg";
 import HeroSection from "./components/HeroSection";
 import RecentBlogPage from "./components/RecentBlogPage";
 import FeatureSection from './components/FeatureSection';
+import Workflow from './components/Workflow';
 
 const AppRoot = () => {
   return (
@@ -12,6 +13,7 @@ const AppRoot = () => {
         <FeatureSection/>
         <RecentBlogPage />
         <HeroSection/>
+        <Workflow/>
         <Footer/>
       </div>
   )

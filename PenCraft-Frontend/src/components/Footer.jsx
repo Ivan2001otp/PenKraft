@@ -6,14 +6,12 @@ const resourcesLinks = [
   { href: "#", text: "Documentation" },
   { href: "#", text: "Tutorials" },
   { href: "#", text: "API Reference" },
-  { href: "#", text: "Community Forums" },
 ];
 
 const platformLinks = [
   { href: "#", text: "Features" },
   { href: "#", text: "Supported Devices" },
   { href: "#", text: "System Requirements" },
-  { href: "#", text: "Downloads" },
   { href: "#", text: "Release Notes" },
 ];
 
@@ -21,8 +19,6 @@ const communityLinks = [
   { href: "#", text: "Events" },
   { href: "#", text: "Meetups" },
   { href: "#", text: "Conferences" },
-  { href: "#", text: "Hackathons" },
-  { href: "#", text: "Jobs" },
 ];
 
 const Footer = () => {
@@ -75,7 +71,7 @@ const Footer = () => {
           <ul className="space-y-2">
             {communityLinks.map((item, index) => (
               <li key={index}>
-                <a className="text-neutral-300hover:text-white">{item.text}</a>
+                <a className="text-neutral-300 hover:text-white">{item.text}</a>
               </li>
             ))}
           </ul>
@@ -84,7 +80,7 @@ const Footer = () => {
         <div className="relative mt-20 h-fit w-fit  hover:border-orange-400">
           <img
             alt="product-logo"
-            className={`h-40 w-40 rounded-lg transition-transform duration-400 ease-in-out  ${
+            className={`h-40 w-40 rounded-lg transition-transform duration-500 ease-in-out  ${
               isHovered ? "scale-125 " : "scale-100"
             }`}
             onMouseLeave={() => setIsHovered(false)}

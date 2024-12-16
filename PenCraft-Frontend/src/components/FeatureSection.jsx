@@ -73,14 +73,14 @@ const FeatureSection = () => {
             <div className="flex flex-wrap mt-10 lg:mt-16 p-2">
                 {
                     features.map((item, index) => (
-                        <div key={index} className='w-full sm:w-1/2 lg:w-1/3 bg-slate-700 my-1 rounded-sm border-2 border-yellow-700'>
+                        <div key={index} className='w-full hover:border-yellow-400 sm:w-1/2 lg:w-1/3 bg-slate-900 my-1 rounded-sm border-2 border-yellow-700'>
                             <div className='flex mt-2 ml-2'>
                                 {getIconById(item.id)}
                             </div>
 
                             <div>
-                                <h5 className='mt-1 mb-2 text-xl text-orange-600 text-left p-2'>{item.text}</h5>
-                                <p className='text-left p-2 mb-4 '>{item.description}</p>
+                                <h5 className='mt-1text-xl text-orange-600 text-left p-2 logo-font'>{item.text}</h5>
+                                <p className='text-left p-2 mb-4 logo-font'>{item.description}</p>
                             </div>
                         </div>
                     ))
