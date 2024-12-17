@@ -41,13 +41,17 @@ const Navbar = () => {
                 key={index}
               >
                 {item.label === "Social-Media" ? (
+                  <a href="https://x.com/I_Dsouza7697" >
                   <img
                     className="h-8 w-8 cursor-pointer bg-white 
                                 hover:bg-orange-400 transition duration-300
                                 rounded-md"
                     src={twitter}
-                    alt="media"
+                    alt="Creator Profile"
+                    
                   />
+                  </a>
+                  
                 ) : (
                   <a className="text-[16px]" href={item.href}>
                     {item.label}

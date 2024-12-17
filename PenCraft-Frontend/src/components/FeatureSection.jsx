@@ -60,7 +60,7 @@ function getIconById(Id) {
 
 const FeatureSection = () => {
   return (
-    <div className='mt-4  border-neutral-800 min-h-[800px]'>
+    <div className='mt-20  border-neutral-800 min-h-[800px]'>
         <div className='text-center mt-6'>
             <span className='uppercase text-orange-500 rounded-full h-10 font-medium sm:text-3xl lg:text-5xl text-xl px-2 py-1 logo-font'>Features</span>
             {/* Conquer Boss Fights, Clear Levels, and Share Your Experience! */}
