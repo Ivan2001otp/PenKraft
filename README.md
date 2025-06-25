@@ -1,6 +1,6 @@
 # PenKraft
 This a  Blogging platform where people can write and post blogs on gaming content only . The backend is created using Golang ,Front end is designed using React.
-Follow my twitter handle [Dezmond Dsouza](https://x.com/I_Dsouza7697) where i share the progress of my project.
+
 
 
 ## Architecture
@@ -8,7 +8,7 @@ Follow my twitter handle [Dezmond Dsouza](https://x.com/I_Dsouza7697) where i sh
 ![](https://github.com/Ivan2001otp/PenKraft/blob/main/PenCraft-Backend/architect.png)
 
 
-## Work in Progress(Glimpse)
-Check out this video: [YouTube Video](https://youtu.be/AJGj6S2Sjc0)
+## Final Demo
+Check out this video to see Demo: [YouTube Video](https://youtu.be/AJGj6S2Sjc0)
 
 
